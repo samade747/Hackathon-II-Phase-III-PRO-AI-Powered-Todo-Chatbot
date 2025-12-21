@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+SPEC="$1"
+if [ -z "$SPEC" ] || [ ! -f "$SPEC" ]; then
+  echo "Usage: ./sp.plan <spec-file>"
+  exit 1
+fi
+TITLE=$(grep -m1 "^title:" "$SPEC" | sed 's/title: //g' | tr -d '"')
+cat <<EOF
+# Plan for ${TITLE}
+
+1. Agent Design
+2. Skill Definitions
+3. API Gateway / auth middleware
+4. Chat UI (frontend)
+5. Voice Input (frontend)
+6. Urdu i18n layer (translator subagent)
+7. Tests and verification
+EOF

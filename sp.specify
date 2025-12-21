@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# sp.specify — Professional spec generator (Phase III)
+set -e
+NAME="$1"
+TITLE="$2"
+if [ -z "$NAME" ] || [ -z "$TITLE" ]; then
+  echo "Usage: ./sp.specify <short-name> \"Title\""
+  exit 1
+fi
+mkdir -p specs/features
+cat > specs/features/$NAME.spec.md <<EOF
+---
+title: "$TITLE"
+id: $NAME
+phase: III
+status: draft
+---
+
+# Constitution
+
+# User Stories
+
+# Acceptance Criteria
+
+# Agent Behavior
+
+# API Contracts
+
+# UI Flows
+
+# Edge Cases
+
+# Test Scenarios
+
+# Implementation Notes
+EOF
+echo "Created specs/features/$NAME.spec.md"

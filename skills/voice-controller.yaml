@@ -1,0 +1,6 @@
+name: voice_controller
+description: Handles voice input from the frontend and produces text utterances (STT) or transcriptions.
+inputs:
+  - audio_blob: binary
+outputs:
+  - transcript: string

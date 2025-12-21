@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+cat <<EOF
+- Define intents + slots (intent-extractor)
+- Map intents to API calls (todo-orchestrator)
+- Implement JWT middleware (backend/auth.py)
+- Implement Chat UI (frontend/app/chat + components)
+- Add speech-to-text (VoiceControl)
+- Add Urdu translation layer (translator-urdu)
+- End-to-end tests for chat flows and auth
+EOF

@@ -1,0 +1,23 @@
+# Phase III Constitution — AI-Powered Todo Chatbot
+
+## Immutable Goals
+- Transform the Todo system into a conversational, agent-driven system.
+- Natural language → intent → validated action → execution.
+
+## Non-Negotiables
+- ❌ No manual feature coding
+- ✅ All logic generated via Claude Code
+- ✅ Stateless backend (JWT only)
+- ✅ Multi-language support (Urdu mandatory)
+- ✅ Voice input support
+
+## Architectural Principles
+- Agent-First Design
+- Spec-as-Code
+- Cloud-Native by default
+- Reusable Intelligence
+
+## Security
+- JWT verification on every request
+- User isolation enforced at DB + agent layer
+- Secrets via environment variables only

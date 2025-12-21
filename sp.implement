@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+SPEC="$1"
+if [ -z "$SPEC" ] || [ ! -f "$SPEC" ]; then
+  echo "Usage: ./sp.implement <spec-file>"
+  exit 1
+fi
+if command -v claude-code >/dev/null 2>&1; then
+  echo "Calling Claude Code CLI to implement: $SPEC"
+  claude-code /sp.implement --input-file "$SPEC" --output ./generated_phase3 || echo "claude-code failed or returned non-zero"
+else
+  echo "Claude Code CLI not found. Please paste CLAUDE_PROMPT_IMPLEMENT_PHASE3.txt into the Claude web UI and run there."
+  mkdir -p generated_phase3
+  cp "$SPEC" generated_phase3/spec.md
+  echo "Wrote generated_phase3/spec.md — run Claude Code CLI or web UI manually with the prompt file CLAUDE_PROMPT_IMPLEMENT_PHASE3.txt"
+fi

@@ -1,0 +1,9 @@
+name: todo_orchestrator
+description: Converts extracted intents into backend API calls (create/update/delete/list).
+inputs:
+  - intent: string
+  - slots: object
+  - user_id: string
+outputs:
+  - action: string
+  - payload: object

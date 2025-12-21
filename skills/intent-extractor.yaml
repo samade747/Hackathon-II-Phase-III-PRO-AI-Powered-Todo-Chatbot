@@ -1,0 +1,7 @@
+name: intent_extractor
+description: Extract intent and slots from natural language utterances.
+inputs:
+  - utterance: string
+outputs:
+  - intent: string
+  - slots: object

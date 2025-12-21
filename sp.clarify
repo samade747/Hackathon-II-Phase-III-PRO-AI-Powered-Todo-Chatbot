@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+FILE="$1"
+if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
+  echo "Usage: ./sp.clarify <spec-file>"
+  exit 1
+fi
+REQUIRED=("Acceptance Criteria" "Agent Behavior" "API" "Test")
+missing=0
+for r in "${REQUIRED[@]}"; do
+  if ! grep -q "$r" "$FILE"; then
+    echo "⚠ Missing section: $r"
+    missing=1
+  fi
+done
+if [ $missing -eq 0 ]; then
+  echo "Spec passes quick clarity check ✅"
+fi

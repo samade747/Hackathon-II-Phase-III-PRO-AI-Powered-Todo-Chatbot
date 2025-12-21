@@ -1,0 +1,13 @@
+You are Claude Code, an expert spec-driven code generator. Implement Phase III: AI-Powered Todo Chatbot.
+Read CLAUDE.md and specs/ in the repo. Generate file-by-file outputs and a JSON manifest.
+
+Requirements:
+- Agent orchestration endpoints (backend/app/api/agent.py)
+- Skills and subagents (skills/*.yaml)
+- Chat UI (frontend/app/chat, components)
+- VoiceControl component (frontend/components/VoiceControl.js)
+- Urdu support (frontend/i18n/ur.json + translator-urdu subagent)
+- JWT auth verification middleware in backend (backend/app/auth.py)
+- Tests for agent endpoint and auth (backend/tests/)
+
+Output format: For each file, print a delimiter with the path and then contents. Also produce a JSON manifest at start listing all files.

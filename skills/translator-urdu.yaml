@@ -1,0 +1,8 @@
+name: translator_urdu
+description: Detects Urdu language and translates/transliterates into canonical English intents/slots.
+inputs:
+  - utterance: string
+  - lang_hint: string (optional)
+outputs:
+  - utterance_en: string
+  - detected_lang: string
