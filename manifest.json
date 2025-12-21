@@ -1,0 +1,20 @@
+{
+    "phase": "III",
+    "project": "AI-Powered Todo Chatbot",
+    "files": [
+        "backend/app/main.py",
+        "backend/app/auth.py",
+        "backend/app/api/agent.py",
+        "backend/requirements.txt",
+        "backend/tests/test_agent.py",
+        "frontend/src/app/chat/page.tsx",
+        "frontend/src/app/page.tsx",
+        "frontend/src/components/VoiceControl.tsx",
+        "frontend/src/i18n/ur.json",
+        "skills/intent-extractor.yaml",
+        "skills/todo-orchestrator.yaml",
+        "skills/translator-urdu.yaml",
+        "skills/voice-controller.yaml",
+        "history/interactions.txt"
+    ]
+}
