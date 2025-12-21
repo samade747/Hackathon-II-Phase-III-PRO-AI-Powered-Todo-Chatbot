@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Any, Dict
 from app.auth import verify_jwt
+import os
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
@@ -46,6 +47,8 @@ async def dispatch_agent(
         "slots": slots,
         "user_id": user.get("user_id")
     })
+    
+    action = orch_res.get("action", "clarify")
     
     import json
     from datetime import datetime
