@@ -5,6 +5,7 @@
         "backend/app/main.py",
         "backend/app/auth.py",
         "backend/app/api/agent.py",
+        "backend/app/api/skills.py",
         "backend/requirements.txt",
         "backend/tests/test_agent.py",
         "frontend/src/app/chat/page.tsx",
@@ -15,6 +16,7 @@
         "skills/todo-orchestrator.yaml",
         "skills/translator-urdu.yaml",
         "skills/voice-controller.yaml",
+        "history/interactions.json",
         "history/interactions.txt"
     ]
 }
