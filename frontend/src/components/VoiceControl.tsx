@@ -1,0 +1,85 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { Mic } from "lucide-react";
+
+export default function VoiceControl({ onTranscript }: { onTranscript: (t: string) => void }) {
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const Win = window as any;
+            const SpeechRecognition = Win.SpeechRecognition || Win.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognitionRef.current = new SpeechRecognition();
+                recognitionRef.current.continuous = false;
+                recognitionRef.current.interimResults = false;
+                recognitionRef.current.lang = "en-US"; // Default, bot can detect Urdu in backend
+
+                recognitionRef.current.onresult = (event: any) => {
+                    const transcript = event.results[0][0].transcript;
+                    onTranscript(transcript);
+                    setIsListening(false);
+                };
+
+                recognitionRef.current.onerror = (event: any) => {
+                    console.error("Speech recognition error", event.error);
+                    setIsListening(false);
+                };
+            }
+        }
+    }, [onTranscript]);
+
+    const toggleListening = () => {
+        if (isListening) {
+            recognitionRef.current?.stop();
+            setIsListening(false);
+        } else {
+            recognitionRef.current?.start();
+            setIsListening(true);
+        }
+    };
+
+    return (
+        <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={toggleListening}
+            className={cn(
+                "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg",
+                isListening
+                    ? "bg-rose-500 text-white shadow-rose-200 animate-pulse"
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 shadow-slate-100"
+            )}
+            title={isListening ? "Stop Listening" : "Start Voice Command"}
+        >
+            {isListening ? (
+                <div className="flex gap-1">
+                    <motion.span
+                        animate={{ height: [8, 16, 8] }}
+                        transition={{ repeat: Infinity, duration: 0.5 }}
+                        className="w-1 bg-white rounded-full"
+                    />
+                    <motion.span
+                        animate={{ height: [12, 8, 12] }}
+                        transition={{ repeat: Infinity, duration: 0.5, delay: 0.1 }}
+                        className="w-1 bg-white rounded-full"
+                    />
+                    <motion.span
+                        animate={{ height: [8, 16, 8] }}
+                        transition={{ repeat: Infinity, duration: 0.5, delay: 0.2 }}
+                        className="w-1 bg-white rounded-full"
+                    />
+                </div>
+            ) : (
+                <Mic size={20} />
+            )}
+        </motion.button>
+    );
+}
+
+const cn = (...inputs: any[]) => {
+    return inputs.filter(Boolean).join(" ");
+};
