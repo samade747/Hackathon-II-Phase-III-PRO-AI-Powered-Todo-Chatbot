@@ -44,7 +44,7 @@ export default function ChatPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true); // Default open for desktop
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [viewMode, setViewMode] = useState<"active" | "history">("active");
     const [isAddingTask, setIsAddingTask] = useState(false);
@@ -231,7 +231,7 @@ export default function ChatPage() {
                 <div className="absolute inset-x-0 inset-y-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:32px_32px] opacity-20" />
             </div>
 
-            {/* Mobile Sidebar Overlay */}
+            {/* Mobile Sidebar Overlay - Only on small screens */}
             <AnimatePresence>
                 {sidebarOpen && (
                     <motion.div
@@ -247,10 +247,9 @@ export default function ChatPage() {
             {/* Sidebar */}
             <motion.aside
                 initial={false}
-                animate={{ x: sidebarOpen ? 0 : -300 }}
+                animate={{ x: sidebarOpen ? 0 : -320 }}
                 className={cn(
-                    "fixed inset-y-0 left-0 w-80 bg-[#1E293B]/80 backdrop-blur-2xl border-r border-white/5 z-50 lg:relative lg:translate-x-0 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col shadow-2xl lg:shadow-none",
-                    !sidebarOpen && "translate-x-[-100%] lg:translate-x-0"
+                    "fixed inset-y-0 left-0 w-80 bg-[#1E293B]/80 backdrop-blur-2xl border-r border-white/5 z-50 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col shadow-2xl"
                 )}
             >
                 <div className="p-8 border-b border-white/5 flex items-center justify-between">
@@ -330,7 +329,7 @@ export default function ChatPage() {
             </motion.aside>
 
             {/* Main Container - Split Screen */}
-            <div className="flex-1 flex overflow-hidden relative z-10">
+            <div className={cn("flex-1 flex overflow-hidden relative z-10 transition-all duration-500", sidebarOpen && "ml-80")}>
 
                 {/* Left Side: Chat Interface */}
                 <section className="flex-1 flex flex-col border-r border-white/5 bg-[#0F172A]/40 backdrop-blur-md">
@@ -338,8 +337,8 @@ export default function ChatPage() {
                     <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02]">
                         <div className="flex items-center gap-4">
                             <button
-                                onClick={() => setSidebarOpen(true)}
-                                className="lg:hidden p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80"
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                                className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80"
                             >
                                 <Menu size={24} />
                             </button>
