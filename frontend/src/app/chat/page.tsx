@@ -341,12 +341,42 @@ export default function ChatPage() {
                 <section className="flex-1 flex flex-col border-r border-white/5 bg-[#0F172A]/40 backdrop-blur-md">
                     {/* Header */}
                     <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02]">
-                        <h1 className="text-2xl font-black tracking-tighter text-white">
-                            AI AGENTIXZ <span className="text-indigo-500">USA</span>
-                        </h1>
-                        <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Neural Active</span>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="lg:hidden p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80"
+                            >
+                                <Menu size={24} />
+                            </button>
+                            <h1 className="text-2xl font-black tracking-tighter text-white">
+                                AI AGENTIXZ <span className="text-indigo-500">USA</span>
+                            </h1>
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 hidden sm:block">Neural Active</span>
+                            </div>
+                            {/* User Profile */}
+                            <div className="flex items-center gap-3 p-2 pr-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group">
+                                <div className="relative">
+                                    <div className="w-9 h-9 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/30 font-bold text-sm">
+                                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                                    </div>
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#0F172A] rounded-full" />
+                                </div>
+                                <div className="hidden md:block">
+                                    <div className="text-xs font-bold text-white/90">{user?.email?.split('@')[0] || 'User'}</div>
+                                    <div className="text-[9px] font-bold text-indigo-400/80 uppercase tracking-wider">Online</div>
+                                </div>
+                                <button
+                                    onClick={() => supabase.auth.signOut()}
+                                    className="hidden group-hover:flex items-center gap-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-[10px] font-bold text-red-400 uppercase tracking-wider transition-all"
+                                >
+                                    <LogOut size={12} />
+                                    Exit
+                                </button>
+                            </div>
                         </div>
                     </header>
 
@@ -607,15 +637,6 @@ export default function ChatPage() {
 
             </div>
 
-            {/* User Profile / Quick Settings (Sidebar) */}
-            <div className="fixed bottom-8 left-8 z-50">
-                <button
-                    onClick={() => supabase.auth.signOut()}
-                    className="p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
-                >
-                    <LogOut size={20} />
-                </button>
-            </div>
         </div>
     );
 }
