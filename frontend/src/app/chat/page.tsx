@@ -36,7 +36,7 @@ export default function ChatPage() {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: "assistant",
-            content: "Hey! I'm your AI Task Buddy. I can help you juggle your todos in English or Urdu. What are we tackling today? 😊",
+            content: "Welcome to AI Agentixz USA! I'm your elite AI operative. I can help you manage your objectives in English or Urdu. What's our first mission? 🇺🇸",
             timestamp: new Date(),
             id: "1"
         }
@@ -164,7 +164,7 @@ export default function ChatPage() {
             } else {
                 setMessages((prev) => [...prev, {
                     role: "assistant",
-                    content: "Wait, something's not right. Are you logged in? I need a token to help you! 😅",
+                    content: "Wait, something's not right. Are you logged in? AI Agentixz USA needs a secure link to help you! 😅",
                     timestamp: new Date(),
                     id: (Date.now() + 1).toString()
                 }]);
@@ -213,7 +213,7 @@ export default function ChatPage() {
                     className="flex flex-col items-center gap-4"
                 >
                     <Bot size={48} className="text-indigo-500" />
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">Initializing Cortex...</span>
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">Initializing AI Agentixz USA...</span>
                 </motion.div>
             </div>
         );
@@ -337,10 +337,9 @@ export default function ChatPage() {
                 <section className="flex-1 flex flex-col border-r border-white/5 bg-[#0F172A]/40 backdrop-blur-md">
                     {/* Header */}
                     <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02]">
-                        <div className="flex items-center gap-4">
-                            <Bot size={24} className="text-indigo-400" />
-                            <h1 className="text-xl font-black tracking-tight">Cortex Chat</h1>
-                        </div>
+                        <h1 className="text-2xl font-black tracking-tighter text-white">
+                            AI AGENTIXZ <span className="text-indigo-500">USA</span>
+                        </h1>
                         <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Neural Active</span>
@@ -541,26 +540,39 @@ export default function ChatPage() {
                                     <button onClick={() => setSelectedTask(null)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
                                         <X size={20} className="text-slate-400" />
                                     </button>
-                                    <span className="text-xs font-black uppercase tracking-widest text-indigo-400">Task Intelligence</span>
+                                    <span className="text-xs font-black uppercase tracking-widest text-indigo-400">AI Agentixz USA Intelligence</span>
                                 </header>
                                 <div className="p-8 space-y-8 flex-1 overflow-y-auto">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Objective Name</label>
-                                        <h3 className="text-2xl font-black">{selectedTask.title}</h3>
-                                    </div>
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Objective Name</label>
+                                            <input
+                                                type="text"
+                                                value={selectedTask.title}
+                                                onChange={(e) => updateTaskDetails(selectedTask.id, { title: e.target.value })}
+                                                className="w-full bg-transparent border-none focus:ring-0 text-2xl font-black p-0"
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 group">
                                             <Bell size={18} className="text-indigo-400" />
                                             <div className="flex-1">
                                                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Date</div>
-                                                <div className="text-sm font-bold text-slate-300">{selectedTask.due_date || "No deadline set"}</div>
+                                                <input
+                                                    type="date"
+                                                    value={selectedTask.due_date || ""}
+                                                    onChange={(e) => updateTaskDetails(selectedTask.id, { due_date: e.target.value })}
+                                                    className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-300 p-0"
+                                                />
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-2xl border border-white/5 min-h-[150px]">
                                             <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Deep Briefing</div>
-                                            <p className="text-sm text-slate-400 leading-relaxed italic">
-                                                {selectedTask.description || "No tactical details provided for this objective. Ask Cortex to add more info!"}
-                                            </p>
+                                            <textarea
+                                                value={selectedTask.description || ""}
+                                                onChange={(e) => updateTaskDetails(selectedTask.id, { description: e.target.value })}
+                                                placeholder="Provide tactical context..."
+                                                className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-400 leading-relaxed italic resize-none p-0"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -585,6 +597,16 @@ export default function ChatPage() {
                     </AnimatePresence>
                 </section>
 
+            </div>
+
+            {/* User Profile / Quick Settings (Sidebar) */}
+            <div className="fixed bottom-8 left-8 z-50">
+                <button
+                    onClick={() => supabase.auth.signOut()}
+                    className="p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+                >
+                    <LogOut size={20} />
+                </button>
             </div>
         </div>
     );

@@ -82,7 +82,7 @@ async def dispatch_agent(
         elif action == "list":
             message = "Accessing the archives... Here are your current objectives. 📋"
         else:
-            message = "I'm not quite sure how to handle that objective. Could you rephrase it for the Cortex? 🧠"
+            message = "I'm not quite sure how to handle that objective. Could you rephrase it for AI Agentixz USA? 🧠"
 
     # 5. Save History
     save_interaction({

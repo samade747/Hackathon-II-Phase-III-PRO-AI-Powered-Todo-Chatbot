@@ -63,8 +63,10 @@ export default function LoginPage() {
                         >
                             <Bot size={32} className="text-white" />
                         </motion.div>
-                        <h1 className="text-3xl font-black tracking-tight text-white mb-2">Welcome Back</h1>
-                        <p className="text-slate-400 text-sm font-medium">Access your AI task companion</p>
+                        <h1 className="text-4xl font-black tracking-tighter text-white mb-2">
+                            AI AGENTIXZ <span className="text-indigo-500">USA</span>
+                        </h1>
+                        <p className="text-slate-400 font-medium">Log in to your elite AI command center</p>
                     </div>
 
                     <form onSubmit={handleLogin} className="space-y-6">
