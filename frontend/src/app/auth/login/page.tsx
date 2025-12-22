@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { Bot, Mail, Lock, ArrowRight, Github } from "lucide-react";
 import Link from "next/link";
@@ -20,7 +20,7 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const { data, error: authError } = await authClient.signIn.email({
+            const { data, error: authError } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });

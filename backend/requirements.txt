@@ -7,3 +7,5 @@ httpx
 pyyaml
 pytest
 pytest-asyncio
+supabase
+python-dotenv
