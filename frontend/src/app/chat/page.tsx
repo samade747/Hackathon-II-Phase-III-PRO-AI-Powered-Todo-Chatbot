@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X, Settings, LogOut, Bell, Search } from "lucide-react";
+import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X, Settings, LogOut, Bell, Search, Repeat } from "lucide-react";
 import VoiceControl from "@/components/VoiceControl";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -27,7 +27,79 @@ interface Task {
     description?: string;
     due_date?: string;
     status: "pending" | "completed";
+    priority?: "low" | "medium" | "high" | "urgent";
+    recurrence?: "none" | "daily" | "weekly" | "monthly";
+    tags?: string[];
 }
+
+const TaskStats = ({ tasks }: { tasks: Task[] }) => {
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.status === 'completed').length;
+    const pending = total - completed;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/5 border border-white/5 rounded-[2rem] p-6 space-y-4"
+        >
+            <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Mission Progress</span>
+                <span className="text-sm font-black text-indigo-400">{percentage}%</span>
+            </div>
+
+            <div className="flex justify-center py-2 relative">
+                <svg className="w-28 h-28 transform -rotate-90">
+                    <circle
+                        cx="56"
+                        cy="56"
+                        r="50"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        fill="transparent"
+                        className="text-white/[0.03]"
+                    />
+                    <motion.circle
+                        initial={{ strokeDashoffset: 314 }}
+                        animate={{ strokeDashoffset: 314 - (314 * percentage) / 100 }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        cx="56"
+                        cy="56"
+                        r="50"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        strokeDasharray="314"
+                        strokeLinecap="round"
+                        fill="transparent"
+                        className="text-indigo-500"
+                    />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-xl font-black">{completed}</span>
+                    <span className="text-[8px] uppercase font-bold text-slate-500 tracking-[0.1em]">Solved</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-1">
+                <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                        <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Done</span>
+                    </div>
+                    <div className="text-base font-black text-white/90">{completed}</div>
+                </div>
+                <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                        <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Active</span>
+                    </div>
+                    <div className="text-base font-black text-white/90">{pending}</div>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
 
 export default function ChatPage() {
     const [user, setUser] = useState<any>(null);
@@ -37,37 +109,66 @@ export default function ChatPage() {
         {
             role: "assistant",
             content: "Welcome to AI Agentixz USA! I'm your elite AI operative. I can help you manage your objectives in English or Urdu. What's our first mission? 🇺🇸",
-            timestamp: new Date(2025, 0, 1), // Static date for initial message to avoid hydration mismatch
+            timestamp: new Date(2025, 0, 1),
             id: "1"
         }
     ]);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(true); // Default open for desktop
+    const [sidebarOpen, setSidebarOpen] = useState(true);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [viewMode, setViewMode] = useState<"active" | "history">("active");
     const [isAddingTask, setIsAddingTask] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [toasts, setToasts] = useState<{ id: string; message: string; type: 'success' | 'error' | 'info' }[]>([]);
 
-    const handleAddTask = async () => {
-        if (!newTaskTitle.trim()) return;
-        const { data: { session } } = await supabase.auth.getSession(); // Fetch session locally
+    const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+        const id = Math.random().toString(36).substr(2, 9);
+        setToasts(prev => [...prev, { id, message, type }]);
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+    };
+
+    const handleAddTask = async (title?: string, priority: Task['priority'] = 'medium', recurrence: Task['recurrence'] = 'none') => {
+        const finalTitle = title || newTaskTitle;
+        if (!finalTitle.trim()) return;
+
+        const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-            router.push("/auth/login"); // Redirect if no session
+            router.push("/auth/login");
             return;
         }
+
+        // Optimistic UI Update
+        const tempId = Math.random().toString();
+        const newTask: Task = {
+            id: tempId,
+            title: finalTitle,
+            status: "pending",
+            priority,
+            recurrence
+        };
+        setTasks(prev => [newTask, ...prev]);
+
         const { error } = await supabase
             .from('tasks')
-            .insert([{ title: newTaskTitle, status: "pending", user_id: session.user.id }]); // Use session.user.id
+            .insert([{
+                title: finalTitle,
+                status: "pending",
+                user_id: session.user.id,
+                priority,
+                recurrence
+            }]);
 
         if (error) {
             console.error("Task creation error:", error);
-            alert("Objective failed! Make sure the 'tasks' table exists in Supabase. Check console for details. 📡");
+            setTasks(prev => prev.filter(t => t.id !== tempId));
+            addToast("Objective deployment failed. 📡", "error");
             return;
         }
 
+        addToast("Objective synchronized successfully. 🚀");
         setNewTaskTitle("");
         setIsAddingTask(false);
         fetchTasks();
@@ -92,7 +193,6 @@ export default function ChatPage() {
                 router.push("/auth/login");
             } else {
                 setUser(session.user);
-                // Fetch tasks from Supabase
                 fetchTasks();
             }
             setIsPending(false);
@@ -163,13 +263,9 @@ export default function ChatPage() {
                     id: (Date.now() + 1).toString()
                 }]);
 
-                // Sync tasks if action is create
                 if (data.action === "create" && data.result?.task) {
-                    const { error } = await supabase
-                        .from('tasks')
-                        .insert([{ title: data.result.task, status: "pending", user_id: user?.id }]);
-
-                    if (!error) fetchTasks();
+                    // Sync priority and recurrence if available from response
+                    fetchTasks();
                 }
             } else {
                 setMessages((prev) => [...prev, {
@@ -193,6 +289,9 @@ export default function ChatPage() {
 
     const toggleTask = async (id: string, currentStatus: string) => {
         const newStatus = currentStatus === "pending" ? "completed" : "pending";
+        // Optimistic toggle
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus as any } : t));
+
         const { error } = await supabase
             .from('tasks')
             .update({ status: newStatus })
@@ -200,7 +299,8 @@ export default function ChatPage() {
 
         if (error) {
             console.error("Task update error:", error);
-            alert("Failed to update objective in the neural net. 💾");
+            setTasks(prev => prev.map(t => t.id === id ? { ...t, status: currentStatus as any } : t));
+            addToast("Failed to update objective in the neural net. 💾", "error");
             return;
         }
 
@@ -208,6 +308,12 @@ export default function ChatPage() {
     };
 
     const deleteTask = async (id: string) => {
+        const taskToDelete = tasks.find(t => t.id === id);
+        if (!taskToDelete) return;
+
+        setTasks(prev => prev.filter(t => t.id !== id));
+        addToast(`Erased objective: ${taskToDelete.title}`, "info");
+
         const { error } = await supabase
             .from('tasks')
             .delete()
@@ -215,7 +321,8 @@ export default function ChatPage() {
 
         if (error) {
             console.error("Task deletion error:", error);
-            alert("Failed to erase objective data. 🛡️");
+            setTasks(prev => [taskToDelete, ...prev]);
+            addToast("Failed to erase objective data. 🛡️", "error");
             return;
         }
 
@@ -253,7 +360,7 @@ export default function ChatPage() {
                 <div className="absolute inset-x-0 inset-y-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:32px_32px] opacity-20" />
             </div>
 
-            {/* Mobile Sidebar Overlay - Only on small screens */}
+            {/* Mobile Sidebar Overlay */}
             <AnimatePresence>
                 {sidebarOpen && (
                     <motion.div
@@ -271,7 +378,7 @@ export default function ChatPage() {
                 initial={false}
                 animate={{ x: sidebarOpen ? 0 : -320 }}
                 className={cn(
-                    "fixed inset-y-0 left-0 w-80 bg-[#1E293B]/80 backdrop-blur-2xl border-r border-white/5 z-50 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col shadow-2xl"
+                    "fixed inset-y-0 left-0 w-80 bg-[#1E293B]/80 backdrop-blur-2xl border-r border-white/5 z-50 transition-transform duration-500 flex flex-col shadow-2xl"
                 )}
             >
                 <div className="p-8 border-b border-white/5 flex items-center justify-between">
@@ -293,11 +400,14 @@ export default function ChatPage() {
                     <motion.button
                         whileHover={{ scale: 1.01, backgroundColor: "rgba(255,255,255,0.1)" }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => setIsAddingTask(true)}
                         className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold hover:bg-white/10 transition-all shadow-xl backdrop-blur-sm group"
                     >
                         <Plus size={20} className="text-indigo-400 group-hover:rotate-90 transition-transform duration-300" />
                         <span>New Task Session</span>
                     </motion.button>
+
+                    <TaskStats tasks={tasks} />
 
                     <div className="space-y-4">
                         <div className="flex items-center justify-between px-2">
@@ -352,7 +462,6 @@ export default function ChatPage() {
                         <button
                             onClick={() => supabase.auth.signOut()}
                             className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
-                            title="Sign Out"
                         >
                             <LogOut size={16} />
                         </button>
@@ -360,18 +469,42 @@ export default function ChatPage() {
                 </div>
             </motion.aside>
 
-            {/* Main Container - Split Screen */}
+            {/* Toasts Overlay */}
+            <div className="fixed top-8 right-8 z-[100] flex flex-col gap-3 pointer-events-none">
+                <AnimatePresence mode="popLayout">
+                    {toasts.map((toast) => (
+                        <motion.div
+                            key={toast.id}
+                            initial={{ opacity: 0, x: 20, scale: 0.9 }}
+                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className={cn(
+                                "pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border font-bold text-sm min-w-[280px]",
+                                toast.type === 'success' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+                                    toast.type === 'error' ? "bg-red-500/10 border-red-500/20 text-red-400" :
+                                        "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
+                            )}
+                        >
+                            <div className={cn(
+                                "w-2 h-2 rounded-full",
+                                toast.type === 'success' ? "bg-emerald-500" :
+                                    toast.type === 'error' ? "bg-red-500" :
+                                        "bg-indigo-400"
+                            )} />
+                            {toast.message}
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
+
+            {/* Main Container */}
             <div className={cn("flex-1 flex overflow-hidden relative z-10 transition-all duration-500", sidebarOpen && "ml-80")}>
 
-                {/* Left Side: Chat Interface */}
+                {/* Chat Interface */}
                 <section className="flex-1 flex flex-col border-r border-white/5 bg-[#0F172A]/40 backdrop-blur-md">
-                    {/* Header */}
                     <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02]">
                         <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => setSidebarOpen(!sidebarOpen)}
-                                className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80"
-                            >
+                            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80">
                                 <Menu size={24} />
                             </button>
                             <h1 className="text-2xl font-black tracking-tighter text-white">
@@ -383,33 +516,20 @@ export default function ChatPage() {
                                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 hidden sm:block">Neural Active</span>
                             </div>
-                            {/* User Profile */}
-                            <div className="flex items-center gap-3 p-2 pr-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group relative">
-                                <div className="relative">
-                                    <div className="w-9 h-9 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/30 font-bold text-sm">
-                                        {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || 'U'}
+                            <div className="flex items-center gap-3 p-2 pr-4 rounded-2xl bg-white/5 border border-white/5">
+                                <div className="relative w-8 h-8">
+                                    <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-xs font-bold">
+                                        {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
                                     </div>
-                                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#0F172A] rounded-full" />
                                 </div>
                                 <div className="hidden md:block">
-                                    <div className="text-xs font-bold text-white/90">
-                                        {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
-                                    </div>
-                                    <div className="text-[9px] font-bold text-indigo-400/80 uppercase tracking-wider">Agent Status: Active</div>
+                                    <div className="text-[10px] font-black">{user?.user_metadata?.full_name || 'OPERATIVE'}</div>
+                                    <div className="text-[8px] text-indigo-400 font-bold uppercase tracking-widest">ACTIVE</div>
                                 </div>
-                                <div className="h-4 w-[1px] bg-white/10 mx-1 hidden md:block" />
-                                <button
-                                    onClick={() => supabase.auth.signOut()}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-[10px] font-bold text-red-400 uppercase tracking-wider transition-all"
-                                >
-                                    <LogOut size={12} />
-                                    <span className="hidden sm:inline">Logout</span>
-                                </button>
                             </div>
                         </div>
                     </header>
 
-                    {/* Messages */}
                     <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
                         <AnimatePresence mode="popLayout">
                             {messages.map((m) => (
@@ -417,16 +537,11 @@ export default function ChatPage() {
                                     key={m.id}
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    className={cn(
-                                        "flex flex-col max-w-[85%]",
-                                        m.role === "user" ? "ml-auto items-end" : "items-start"
-                                    )}
+                                    className={cn("flex flex-col max-w-[85%]", m.role === "user" ? "ml-auto items-end" : "items-start")}
                                 >
                                     <div className={cn(
                                         "px-6 py-4 rounded-[2rem] text-sm font-medium shadow-2xl ring-1 ring-white/5",
-                                        m.role === "user"
-                                            ? "bg-indigo-600 text-white rounded-br-none"
-                                            : "bg-white/5 backdrop-blur-xl text-slate-200 rounded-bl-none border border-white/5"
+                                        m.role === "user" ? "bg-indigo-600 text-white rounded-br-none" : "bg-white/5 backdrop-blur-xl text-slate-200 rounded-bl-none border border-white/5"
                                     )}>
                                         <p>{m.content}</p>
                                     </div>
@@ -443,7 +558,6 @@ export default function ChatPage() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input */}
                     <div className="p-8">
                         <div className="relative group max-w-3xl mx-auto">
                             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[2rem] blur opacity-10 group-focus-within:opacity-25 transition duration-500" />
@@ -453,14 +567,11 @@ export default function ChatPage() {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyPress={(e) => e.key === "Enter" && sendMessage(input)}
-                                    placeholder="Ask me something..."
+                                    placeholder="Task the AI operative..."
                                     className="flex-1 bg-transparent border-none focus:ring-0 text-white px-6 py-3"
                                 />
                                 <VoiceControl onTranscript={handleTranscript} />
-                                <button
-                                    onClick={() => sendMessage(input)}
-                                    className="p-4 bg-indigo-500 text-white rounded-2xl hover:bg-indigo-600 transition-colors shadow-lg shadow-indigo-500/20"
-                                >
+                                <button onClick={() => sendMessage(input)} className="p-4 bg-indigo-500 text-white rounded-2xl hover:bg-indigo-600 shadow-lg shadow-indigo-500/20">
                                     <Send size={20} />
                                 </button>
                             </div>
@@ -468,60 +579,26 @@ export default function ChatPage() {
                     </div>
                 </section>
 
-                {/* Right Side: Task Board (Side-by-side Layout as requested) */}
-                <section className="w-[450px] flex flex-col bg-[#1E293B]/40 backdrop-blur-3xl relative">
+                {/* Task Board */}
+                <section className="w-[450px] flex flex-col bg-[#1E293B]/40 backdrop-blur-3xl">
                     <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02]">
-                        <div className="flex items-center gap-6">
-                            <button
-                                onClick={() => setViewMode("active")}
-                                className={cn("text-sm font-black tracking-tight transition-colors", viewMode === "active" ? "text-white" : "text-slate-500 hover:text-slate-300")}
-                            >
-                                ACTIVE
-                            </button>
-                            <button
-                                onClick={() => setViewMode("history")}
-                                className={cn("text-sm font-black tracking-tight transition-colors", viewMode === "history" ? "text-white" : "text-slate-500 hover:text-slate-300")}
-                            >
-                                HISTORY
-                            </button>
+                        <div className="flex items-center gap-6 font-black text-xs tracking-widest">
+                            <button onClick={() => setViewMode("active")} className={cn(viewMode === "active" ? "text-indigo-400" : "text-slate-500 hover:text-white transition-colors uppercase")}>ACTIVE</button>
+                            <button onClick={() => setViewMode("history")} className={cn(viewMode === "history" ? "text-indigo-400" : "text-slate-500 hover:text-white transition-colors uppercase")}>HISTORY</button>
                         </div>
-                        <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => setIsAddingTask(!isAddingTask)}
-                            className={cn("p-2 rounded-xl transition-colors", isAddingTask ? "bg-indigo-500 text-white" : "bg-white/5 hover:bg-white/10")}
-                        >
+                        <motion.button onClick={() => setIsAddingTask(!isAddingTask)} className={cn("p-2 rounded-xl", isAddingTask ? "bg-indigo-500 text-white" : "bg-white/5 hover:bg-white/10")}>
                             <Plus size={20} />
                         </motion.button>
                     </header>
 
                     <div className="flex-1 overflow-y-auto p-8 space-y-4">
-                        {isAddingTask && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="mb-6 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl"
-                            >
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    value={newTaskTitle}
-                                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                                    onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
-                                    placeholder="Enter new objective..."
-                                    className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-white placeholder:text-indigo-300/40"
-                                />
-                            </motion.div>
-                        )}
-
-                        <div className="flex items-center justify-between px-2 mb-4">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                {viewMode === "active" ? "Current Objectives" : "Archived Progress"}
-                            </span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
-                                {tasks.filter(t => viewMode === "active" ? t.status === "pending" : t.status === "completed").length} Total
-                            </span>
-                        </div>
+                        <AnimatePresence>
+                            {isAddingTask && (
+                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-6 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                                    <input autoFocus type="text" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} onKeyPress={(e) => e.key === "Enter" && handleAddTask()} placeholder="Objective title..." className="w-full bg-transparent border-none focus:ring-0 text-white font-bold" />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         <AnimatePresence mode="popLayout">
                             {tasks
@@ -534,133 +611,58 @@ export default function ChatPage() {
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, scale: 0.9 }}
                                         onClick={() => setSelectedTask(task)}
-                                        className={cn(
-                                            "group flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all duration-300 cursor-pointer",
-                                            task.status === "completed"
-                                                ? "bg-emerald-500/5 border-emerald-500/10 text-slate-500"
-                                                : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/[0.07]"
-                                        )}
+                                        className={cn("group flex items-center gap-4 p-5 rounded-[1.5rem] border border-white/5 bg-white/5 hover:bg-white/[0.08] transition-all cursor-pointer")}
                                     >
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggleTask(task.id, task.status);
-                                            }}
-                                            className={cn(
-                                                "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
-                                                task.status === "completed"
-                                                    ? "bg-emerald-500 border-emerald-500 text-white"
-                                                    : "border-slate-600 group-hover:border-indigo-500"
-                                            )}
-                                        >
+                                        <button onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.status); }} className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors", task.status === "completed" ? "bg-emerald-500 border-emerald-500" : "border-slate-600 group-hover:border-indigo-500")}>
                                             {task.status === "completed" && <CheckCircle2 size={14} />}
                                         </button>
-                                        <span className={cn("flex-1 font-bold text-sm tracking-wide", task.status === "completed" && "line-through")}>
-                                            {task.title}
-                                        </span>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                deleteTask(task.id);
-                                            }}
-                                            className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-all"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className="flex-1 flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className={cn("font-bold text-sm", task.status === "completed" && "line-through opacity-50")}>{task.title}</span>
+                                                {task.priority && task.priority !== 'medium' && (
+                                                    <span className={cn("text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest", task.priority === 'urgent' ? "bg-red-500/20 text-red-400" : task.priority === 'high' ? "bg-amber-500/20 text-amber-400" : "bg-slate-500/20 text-slate-400")}>{task.priority}</span>
+                                                )}
+                                            </div>
+                                            {task.recurrence && task.recurrence !== 'none' && (
+                                                <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest"><Repeat size={10} /> {task.recurrence}</div>
+                                            )}
+                                        </div>
+                                        <button onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-all"><Trash2 size={16} /></button>
                                     </motion.div>
                                 ))}
                         </AnimatePresence>
                     </div>
 
-                    {/* Task Details Info (Footer style or Sidebar) */}
-                    <div className="p-8 border-t border-white/5 bg-black/20">
-                        <div className="flex items-center gap-4">
-                            <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${(tasks.filter(t => t.status === "completed").length / (tasks.length || 1)) * 100}%` }}
-                                    className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500"
-                                />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                {tasks.length > 0 ? Math.round((tasks.filter(t => t.status === "completed").length / tasks.length) * 100) : 0}% Complete
-                            </span>
-                        </div>
+                    <div className="p-8 border-t border-white/5 flex flex-col gap-4">
+                        <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-widest text-slate-500">MISSION EFFICIENCY</span><span className="text-xs font-black text-indigo-400">{tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'completed').length / tasks.length) * 100) : 0}%</span></div>
+                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${(tasks.filter(t => t.status === 'completed').length / (tasks.length || 1)) * 100}%` }} className="h-full bg-indigo-500" /></div>
                     </div>
 
-                    {/* Task Details Overlay */}
+                    {/* Task Detail Panel */}
                     <AnimatePresence>
                         {selectedTask && (
-                            <motion.div
-                                initial={{ x: "100%" }}
-                                animate={{ x: 0 }}
-                                exit={{ x: "100%" }}
-                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                className="absolute inset-0 bg-[#0F172A] z-30 flex flex-col border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)]"
-                            >
+                            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="absolute inset-0 bg-[#0F172A] z-[60] flex flex-col border-l border-white/10 shadow-2xl">
                                 <header className="h-20 border-b border-white/5 flex items-center justify-between px-8">
-                                    <button onClick={() => setSelectedTask(null)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
-                                        <X size={20} className="text-slate-400" />
-                                    </button>
-                                    <span className="text-xs font-black uppercase tracking-widest text-indigo-400">AI Agentixz USA Intelligence</span>
+                                    <button onClick={() => setSelectedTask(null)} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 transition-colors"><X size={20} /></button>
+                                    <span className="text-xs font-black uppercase tracking-widest text-indigo-400">Tactical Intelligence</span>
                                 </header>
                                 <div className="p-8 space-y-8 flex-1 overflow-y-auto">
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Objective Name</label>
-                                            <input
-                                                type="text"
-                                                value={selectedTask.title}
-                                                onChange={(e) => updateTaskDetails(selectedTask.id, { title: e.target.value })}
-                                                className="w-full bg-transparent border-none focus:ring-0 text-2xl font-black p-0"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 group">
-                                            <Bell size={18} className="text-indigo-400" />
-                                            <div className="flex-1">
-                                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Date</div>
-                                                <input
-                                                    type="date"
-                                                    value={selectedTask.due_date || ""}
-                                                    onChange={(e) => updateTaskDetails(selectedTask.id, { due_date: e.target.value })}
-                                                    className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-300 p-0"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-2xl border border-white/5 min-h-[150px]">
-                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Deep Briefing</div>
-                                            <textarea
-                                                value={selectedTask.description || ""}
-                                                onChange={(e) => updateTaskDetails(selectedTask.id, { description: e.target.value })}
-                                                placeholder="Provide tactical context..."
-                                                className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-400 leading-relaxed italic resize-none p-0"
-                                            />
-                                        </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">OBJECTIVE</label>
+                                        <input type="text" value={selectedTask.title} onChange={(e) => updateTaskDetails(selectedTask.id, { title: e.target.value })} className="w-full bg-transparent border-none focus:ring-0 text-2xl font-black p-0 uppercase" />
                                     </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Priority</div><select value={selectedTask.priority || 'medium'} onChange={(e) => updateTaskDetails(selectedTask.id, { priority: e.target.value as any })} className="bg-transparent border-none focus:ring-0 text-xs font-bold p-0 uppercase block w-full"><option className="bg-[#1E293B]" value="low">LOW</option><option className="bg-[#1E293B]" value="medium">MEDIUM</option><option className="bg-[#1E293B]" value="high">HIGH</option><option className="bg-[#1E293B]" value="urgent">URGENT</option></select></div>
+                                        <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Repeat</div><select value={selectedTask.recurrence || 'none'} onChange={(e) => updateTaskDetails(selectedTask.id, { recurrence: e.target.value as any })} className="bg-transparent border-none focus:ring-0 text-xs font-bold p-0 uppercase block w-full"><option className="bg-[#1E293B]" value="none">NONE</option><option className="bg-[#1E293B]" value="daily">DAILY</option><option className="bg-[#1E293B]" value="weekly">WEEKLY</option><option className="bg-[#1E293B]" value="monthly">MONTHLY</option></select></div>
+                                    </div>
+                                    <div className="space-y-2"><div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Description</div><textarea value={selectedTask.description || ''} onChange={(e) => updateTaskDetails(selectedTask.id, { description: e.target.value })} placeholder="Tactical context..." className="w-full bg-transparent border-none focus:ring-0 p-0 text-sm italic resize-none h-40" /></div>
                                 </div>
-                                <div className="p-8 border-t border-white/5 bg-white/[0.02]">
-                                    <button
-                                        onClick={() => {
-                                            toggleTask(selectedTask.id, selectedTask.status);
-                                            setSelectedTask(null);
-                                        }}
-                                        className={cn(
-                                            "w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[.2em] transition-all",
-                                            selectedTask.status === "completed"
-                                                ? "bg-slate-700 text-slate-400"
-                                                : "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
-                                        )}
-                                    >
-                                        {selectedTask.status === "completed" ? "RE-ACTIVATE MISSION" : "COMPLETE OBJECTIVE"}
-                                    </button>
-                                </div>
+                                <div className="p-8 border-t border-white/5"><button onClick={() => { toggleTask(selectedTask.id, selectedTask.status); setSelectedTask(null); }} className={cn("w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest", selectedTask.status === 'completed' ? "bg-slate-700 text-slate-400" : "bg-indigo-600 text-white shadow-xl shadow-indigo-500/20")}>{selectedTask.status === 'completed' ? "Re-activate Objective" : "Mark Objective Complete"}</button></div>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </section>
-
-            </div >
-
-        </div >
+            </div>
+        </div>
     );
 }

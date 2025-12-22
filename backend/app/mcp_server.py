@@ -6,17 +6,25 @@ import logging
 mcp = FastMCP("TodoAgent")
 
 @mcp.tool()
-async def add_todo(title: str, user_id: str, status: str = "pending") -> str:
+async def add_todo(
+    title: str, 
+    user_id: str, 
+    priority: str = "medium", 
+    recurrence: str = "none", 
+    tags: list = None
+) -> str:
     """
-    Add a new todo task for the specified user.
+    Add a new todo task with optional priority, recurrence, and tags.
     """
     try:
         response = supabase.table("tasks").insert({
             "title": title,
             "user_id": user_id,
-            "status": status
+            "priority": priority,
+            "recurrence": recurrence,
+            "tags": tags or []
         }).execute()
-        return f"Task '{title}' created successfully."
+        return f"Task '{title}' [Priority: {priority}] created successfully."
     except Exception as e:
         return f"Error creating task: {str(e)}"
 

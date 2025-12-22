@@ -62,9 +62,16 @@ async def dispatch_agent(
     
     if intent == "add_task":
         item = slots.get("item", "something")
-        tool_res = await mcp.call_tool("add_todo", {"title": item, "user_id": user_id})
+        priority = slots.get("priority", "medium")
+        recurrence = slots.get("recurrence", "none")
+        tool_res = await mcp.call_tool("add_todo", {
+            "title": item, 
+            "user_id": user_id,
+            "priority": priority,
+            "recurrence": recurrence
+        })
         action = "create"
-        result = {"task": item, "response": tool_res}
+        result = {"task": item, "priority": priority, "recurrence": recurrence, "response": tool_res}
     elif intent == "list_tasks":
         tool_res = await mcp.call_tool("list_todos", {"user_id": user_id})
         action = "list"

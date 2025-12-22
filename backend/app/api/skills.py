@@ -37,15 +37,48 @@ class SkillManager:
         
         # Enhanced simulation using YAML structure
         if name == "intent_extractor":
-            # In a real app, this would be an LLM call using skill['description'] as part of the prompt
             u_low = utterance.lower()
-            if any(k in u_low for k in ["buy", "add", "new", "create", "need"]):
-                item = u_low.split("buy")[-1].split("add")[-1].strip() or "something"
-                return {"intent": "add_task", "slots": {"item": item.capitalize()}}
+            
+            # Detect Priority
+            priority = "medium"
+            if "urgent" in u_low or "asap" in u_low: priority = "urgent"
+            elif "high" in u_low or "important" in u_low: priority = "high"
+            elif "low" in u_low: priority = "low"
+
+            # Detect Recurrence
+            recurrence = "none"
+            if "every day" in u_low or "daily" in u_low: recurrence = "daily"
+            elif "every week" in u_low or "weekly" in u_low: recurrence = "weekly"
+            elif "every month" in u_low or "monthly" in u_low: recurrence = "monthly"
+
+            if any(k in u_low for k in ["buy", "add", "new", "create", "need", "remember"]):
+                # Simple extraction: take everything after the first trigger word
+                item = utterance
+                for k in ["add", "buy", "new", "create", "need", "remember"]:
+                    if k in u_low:
+                        item = u_low.split(k)[-1].strip()
+                        break
+                # Clean up priority/recurrence words from the item title
+                for k in ["urgent", "high", "low", "daily", "weekly", "monthly", "every day", "every week"]:
+                    item = item.replace(k, "").strip()
+                
+                return {
+                    "intent": "add_task", 
+                    "slots": {
+                        "item": item.capitalize(),
+                        "priority": priority,
+                        "recurrence": recurrence
+                    }
+                }
             elif any(k in u_low for k in ["list", "show", "what", "todos", "tasks"]):
                 return {"intent": "list_tasks", "slots": {}}
-            elif any(k in u_low for k in ["done", "finish", "complete", "check"]):
-                return {"intent": "complete_task", "slots": {"item": u_low.split("done")[-1].strip()}}
+            elif any(k in u_low for k in ["done", "finish", "complete", "check", "solved"]):
+                item = u_low
+                for k in ["done", "finish", "complete", "check", "solved"]:
+                    if k in u_low:
+                        item = u_low.split(k)[-1].strip()
+                        break
+                return {"intent": "complete_task", "slots": {"item": item}}
             return {"intent": "clarify", "slots": {}}
 
         if name == "translator_urdu":
