@@ -219,7 +219,7 @@ export default function ChatPage() {
         );
     }
 
-    if (!session) return null;
+    if (!user) return null;
 
     return (
         <div className="flex h-screen bg-[#0F172A] overflow-hidden font-sans selection:bg-indigo-500/30 text-white relative">
@@ -230,6 +230,7 @@ export default function ChatPage() {
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-150 contrast-150 mix-blend-overlay" />
                 <div className="absolute inset-x-0 inset-y-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:32px_32px] opacity-20" />
             </div>
+            极
 
             {/* Mobile Sidebar Overlay */}
             <AnimatePresence>
@@ -425,17 +426,37 @@ export default function ChatPage() {
                         <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+                            onClick={() => setIsAddingTask(!isAddingTask)}
+                            className={cn("p-2 rounded-xl transition-colors", isAddingTask ? "bg-indigo-500 text-white" : "bg-white/5 hover:bg-white/10")}
                         >
                             <Plus size={20} />
                         </motion.button>
                     </header>
 
                     <div className="flex-1 overflow-y-auto p-8 space-y-4">
+                        {isAddingTask && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mb-6 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl"
+                            >
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={newTaskTitle}
+                                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                                    onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
+                                    placeholder="Enter new objective..."
+                                    className="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-white placeholder:text-indigo-300/40"
+                                />
+                            </motion.div>
+                        )}
+
                         <div className="flex items-center justify-between px-2 mb-4">
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                                 {viewMode === "active" ? "Current Objectives" : "Archived Progress"}
                             </span>
+                            极
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
                                 {tasks.filter(t => viewMode === "active" ? t.status === "pending" : t.status === "completed").length} Total
                             </span>
