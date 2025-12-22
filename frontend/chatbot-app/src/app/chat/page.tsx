@@ -22,7 +22,7 @@ export default function ChatPage() {
         {
             role: "assistant",
             content: "Hi there! I'm your AI Task Assistant. I can help you manage your todos in English or Urdu. What's on your mind?",
-            timestamp: new Date()
+            timestamp: new Date(2025, 0, 1)
         }
     ]);
     const [input, setInput] = useState("");

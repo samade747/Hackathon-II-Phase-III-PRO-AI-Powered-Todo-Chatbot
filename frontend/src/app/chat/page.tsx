@@ -37,7 +37,7 @@ export default function ChatPage() {
         {
             role: "assistant",
             content: "Welcome to AI Agentixz USA! I'm your elite AI operative. I can help you manage your objectives in English or Urdu. What's our first mission? 🇺🇸",
-            timestamp: new Date(),
+            timestamp: new Date(2025, 0, 1), // Static date for initial message to avoid hydration mismatch
             id: "1"
         }
     ]);
