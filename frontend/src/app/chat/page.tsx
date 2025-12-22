@@ -312,18 +312,28 @@ export default function ChatPage() {
                 </div>
 
                 <div className="p-6 border-t border-white/5 bg-[#1E293B]/40">
-                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 active:scale-95 transition-all cursor-pointer">
+                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 active:scale-95 transition-all cursor-pointer group relative">
                         <div className="relative">
                             <div className="w-11 h-11 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/30 font-bold overflow-hidden">
-                                JD
+                                {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || "U"}
                             </div>
                             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[#1E293B] rounded-full" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="text-sm font-black text-white/90 truncate">John Doe</div>
-                            <div className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest">Master Engineer</div>
+                            <div className="text-sm font-black text-white/90 truncate">
+                                {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User"}
+                            </div>
+                            <div className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest truncate">
+                                {user?.email}
+                            </div>
                         </div>
-                        <MoreVertical size={16} className="text-slate-500" />
+                        <button
+                            onClick={() => supabase.auth.signOut()}
+                            className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
+                            title="Sign Out"
+                        >
+                            <LogOut size={16} />
+                        </button>
                     </div>
                 </div>
             </motion.aside>
@@ -352,23 +362,26 @@ export default function ChatPage() {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 hidden sm:block">Neural Active</span>
                             </div>
                             {/* User Profile */}
-                            <div className="flex items-center gap-3 p-2 pr-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group">
+                            <div className="flex items-center gap-3 p-2 pr-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group relative">
                                 <div className="relative">
                                     <div className="w-9 h-9 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/30 font-bold text-sm">
-                                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                                        {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || 'U'}
                                     </div>
                                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#0F172A] rounded-full" />
                                 </div>
                                 <div className="hidden md:block">
-                                    <div className="text-xs font-bold text-white/90">{user?.email?.split('@')[0] || 'User'}</div>
-                                    <div className="text-[9px] font-bold text-indigo-400/80 uppercase tracking-wider">Online</div>
+                                    <div className="text-xs font-bold text-white/90">
+                                        {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+                                    </div>
+                                    <div className="text-[9px] font-bold text-indigo-400/80 uppercase tracking-wider">Agent Status: Active</div>
                                 </div>
+                                <div className="h-4 w-[1px] bg-white/10 mx-1 hidden md:block" />
                                 <button
                                     onClick={() => supabase.auth.signOut()}
-                                    className="hidden group-hover:flex items-center gap-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-[10px] font-bold text-red-400 uppercase tracking-wider transition-all"
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-[10px] font-bold text-red-400 uppercase tracking-wider transition-all"
                                 >
                                     <LogOut size={12} />
-                                    Exit
+                                    <span className="hidden sm:inline">Logout</span>
                                 </button>
                             </div>
                         </div>
