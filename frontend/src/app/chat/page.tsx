@@ -372,8 +372,8 @@ export default function ChatPage() {
                                         )}>
                                             <p>{m.content}</p>
                                         </div>
-                                        <div className="absolute -bottom-6 left-0 text-[10px] text-slate-500 opacity-60">
-                                            {mounted && m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        <div className="absolute -bottom-6 left-0 text-[10px] text-slate-500 opacity-60" suppressHydrationWarning>
+                                            {mounted ? m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : ''}
                                         </div>
                                     </div>
                                 </motion.div>
