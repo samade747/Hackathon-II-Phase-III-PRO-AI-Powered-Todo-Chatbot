@@ -18,17 +18,20 @@ interface Message {
     id: string;
 }
 
-import { authClient } from "@/lib/auth-client";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 interface Task {
     id: string;
     title: string;
+    description?: string;
+    due_date?: string;
     status: "pending" | "completed";
 }
 
 export default function ChatPage() {
-    const { data: session, isPending } = authClient.useSession();
+    const [user, setUser] = useState<any>(null);
+    const [isPending, setIsPending] = useState(true);
     const router = useRouter();
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -38,21 +41,49 @@ export default function ChatPage() {
             id: "1"
         }
     ]);
-    const [tasks, setTasks] = useState<Task[]>([
-        { id: "1", title: "Refactor Auth Logic", status: "completed" },
-        { id: "2", title: "Analyze Market Trends", status: "pending" },
-        { id: "3", title: "Urdu Assistant Set", status: "pending" },
-    ]);
+    const [tasks, setTasks] = useState<Task[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [viewMode, setViewMode] = useState<"active" | "history">("active");
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    极
 
     useEffect(() => {
-        if (!isPending && !session) {
-            router.push("/auth/login");
-        }
-    }, [session, isPending, router]);
+        const checkUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                router.push("/auth/login");
+            } else {
+                setUser(session.user);
+                // Fetch tasks from Supabase
+                fetchTasks();
+            }
+            setIsPending(false);
+        };
+
+        checkUser();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session) {
+                router.push("/auth/login");
+            } else {
+                setUser(session.user);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [router]);
+
+    const fetchTasks = async () => {
+        const { data, error } = await supabase
+            .from('tasks')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (data) setTasks(data);
+    };
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,11 +102,12 @@ export default function ChatPage() {
         setIsLoading(true);
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
             const response = await fetch("http://localhost:8000/api/agent/dispatch", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${session?.sessionToken || ""}` // Better Auth session token or JWT
+                    "Authorization": `Bearer ${session?.access_token || ""}`
                 },
                 body: JSON.stringify({ utterance: text })
             });
@@ -92,12 +124,11 @@ export default function ChatPage() {
 
                 // Sync tasks if action is create
                 if (data.action === "create" && data.result?.task) {
-                    const newTask: Task = {
-                        id: Date.now().toString(),
-                        title: data.result.task,
-                        status: "pending"
-                    };
-                    setTasks(prev => [newTask, ...prev]);
+                    const { error } = await supabase
+                        .from('tasks')
+                        .insert([{ title: data.result.task, status: "pending", user_id: user?.id }]);
+
+                    if (!error) fetchTasks();
                 }
             } else {
                 setMessages((prev) => [...prev, {
@@ -119,12 +150,23 @@ export default function ChatPage() {
         }
     };
 
-    const toggleTask = (id: string) => {
-        setTasks(prev => prev.map(t => t.id === id ? { ...t, status: t.status === "pending" ? "completed" : "pending" } : t));
+    const toggleTask = async (id: string, currentStatus: string) => {
+        const newStatus = currentStatus === "pending" ? "completed" : "pending";
+        const { error } = await supabase
+            .from('tasks')
+            .update({ status: newStatus })
+            .eq('id', id);
+
+        if (!error) fetchTasks();
     };
 
-    const deleteTask = (id: string) => {
-        setTasks(prev => prev.filter(t => t.id !== id));
+    const deleteTask = async (id: string) => {
+        const { error } = await supabase
+            .from('tasks')
+            .delete()
+            .eq('id', id);
+
+        if (!error) fetchTasks();
     };
 
     const handleTranscript = (transcript: string) => {
@@ -333,11 +375,21 @@ export default function ChatPage() {
                 </section>
 
                 {/* Right Side: Task Board (Side-by-side Layout as requested) */}
-                <section className="w-[450px] flex flex-col bg-[#1E293B]/40 backdrop-blur-3xl">
+                <section className="w-[450px] flex flex-col bg-[#1E293B]/40 backdrop-blur-3xl relative">
                     <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02]">
-                        <div className="flex items-center gap-4">
-                            <CheckCircle2 size={24} className="text-emerald-400" />
-                            <h2 className="text-xl font-black tracking-tight">Task Board</h2>
+                        <div className="flex items-center gap-6">
+                            <button
+                                onClick={() => setViewMode("active")}
+                                className={cn("text-sm font-black tracking-tight transition-colors", viewMode === "active" ? "text-white" : "text-slate-500 hover:text-slate-300")}
+                            >
+                                ACTIVE
+                            </button>
+                            <button
+                                onClick={() => setViewMode("history")}
+                                className={cn("text-sm font-black tracking-tight transition-colors", viewMode === "history" ? "text-white" : "text-slate-500 hover:text-slate-300")}
+                            >
+                                HISTORY
+                            </button>
                         </div>
                         <motion.button
                             whileHover={{ scale: 1.1 }}
@@ -350,48 +402,64 @@ export default function ChatPage() {
 
                     <div className="flex-1 overflow-y-auto p-8 space-y-4">
                         <div className="flex items-center justify-between px-2 mb-4">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Your Objectives</span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">{tasks.length} Active</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                {viewMode === "active" ? "Current Objectives" : "Archived Progress"}
+                            </span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
+                                {tasks.filter(t => viewMode === "active" ? t.status === "pending" : t.status === "completed").length} Total
+                            </span>
                         </div>
 
                         <AnimatePresence mode="popLayout">
-                            {tasks.map((task) => (
-                                <motion.div
-                                    key={task.id}
-                                    layout
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    className={cn(
-                                        "group flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all duration-300",
-                                        task.status === "completed"
-                                            ? "bg-emerald-500/5 border-emerald-500/10 line-through text-slate-500"
-                                            : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/[0.07]"
-                                    )}
-                                >
-                                    <button
-                                        onClick={() => toggleTask(task.id)}
+                            {tasks
+                                .filter(t => viewMode === "active" ? t.status === "pending" : t.status === "completed")
+                                .map((task) => (
+                                    <motion.div
+                                        key={task.id}
+                                        layout
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        onClick={() => setSelectedTask(task)}
                                         className={cn(
-                                            "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                                            "group flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all duration-300 cursor-pointer",
                                             task.status === "completed"
-                                                ? "bg-emerald-500 border-emerald-500 text-white"
-                                                : "border-slate-600 group-hover:border-indigo-500"
+                                                ? "bg-emerald-500/5 border-emerald-500/10 text-slate-500"
+                                                : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/[0.07]"
                                         )}
                                     >
-                                        {task.status === "completed" && <CheckCircle2 size={14} />}
-                                    </button>
-                                    <span className="flex-1 font-bold text-sm tracking-wide">{task.title}</span>
-                                    <button
-                                        onClick={() => deleteTask(task.id)}
-                                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-all"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </motion.div>
-                            ))}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleTask(task.id, task.status);
+                                            }}
+                                            className={cn(
+                                                "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                                                task.status === "completed"
+                                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                                    : "border-slate-600 group-hover:border-indigo-500"
+                                            )}
+                                        >
+                                            {task.status === "completed" && <CheckCircle2 size={14} />}
+                                        </button>
+                                        <span className={cn("flex-1 font-bold text-sm tracking-wide", task.status === "completed" && "line-through")}>
+                                            {task.title}
+                                        </span>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                deleteTask(task.id);
+                                            }}
+                                            className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-all"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </motion.div>
+                                ))}
                         </AnimatePresence>
                     </div>
 
+                    {/* Task Details Info (Footer style or Sidebar) */}
                     <div className="p-8 border-t border-white/5 bg-black/20">
                         <div className="flex items-center gap-4">
                             <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
@@ -402,10 +470,67 @@ export default function ChatPage() {
                                 />
                             </div>
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                {Math.round((tasks.filter(t => t.status === "completed").length / (tasks.length || 1)) * 100)}%
+                                {tasks.length > 0 ? Math.round((tasks.filter(t => t.status === "completed").length / tasks.length) * 100) : 0}% Complete
                             </span>
                         </div>
                     </div>
+
+                    {/* Task Details Overlay */}
+                    <AnimatePresence>
+                        {selectedTask && (
+                            <motion.div
+                                initial={{ x: "100%" }}
+                                animate={{ x: 0 }}
+                                exit={{ x: "100%" }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                className="absolute inset-0 bg-[#0F172A] z-30 flex flex-col border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)]"
+                            >
+                                <header className="h-20 border-b border-white/5 flex items-center justify-between px-8">
+                                    <button onClick={() => setSelectedTask(null)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
+                                        <X size={20} className="text-slate-400" />
+                                    </button>
+                                    <span className="text-xs font-black uppercase tracking-widest text-indigo-400">Task Intelligence</span>
+                                </header>
+                                <div className="p-8 space-y-8 flex-1 overflow-y-auto">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Objective Name</label>
+                                        <h3 className="text-2xl font-black">{selectedTask.title}</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                                            <Bell size={18} className="text-indigo-400" />
+                                            <div className="flex-1">
+                                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Date</div>
+                                                <div className="text-sm font-bold text-slate-300">{selectedTask.due_date || "No deadline set"}</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-2xl border border-white/5 min-h-[150px]">
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Deep Briefing</div>
+                                            <p className="text-sm text-slate-400 leading-relaxed italic">
+                                                {selectedTask.description || "No tactical details provided for this objective. Ask Cortex to add more info!"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-8 border-t border-white/5 bg-white/[0.02]">
+                                    <button
+                                        onClick={() => {
+                                            toggleTask(selectedTask.id, selectedTask.status);
+                                            setSelectedTask(null);
+                                        }}
+                                        className={cn(
+                                            "w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[.2em] transition-all",
+                                            selectedTask.status === "completed"
+                                                ? "bg-slate-700 text-slate-400"
+                                                : "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                                        )}
+                                    >
+                                        {selectedTask.status === "completed" ? "RE-ACTIVATE MISSION" : "COMPLETE OBJECTIVE"}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </section>
 
             </div>
