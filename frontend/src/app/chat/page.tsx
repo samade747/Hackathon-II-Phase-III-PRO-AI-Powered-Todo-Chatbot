@@ -51,11 +51,6 @@ export default function ChatPage() {
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
     const handleAddTask = async () => {
         if (!newTaskTitle.trim()) return;
         const { data: { session } } = await supabase.auth.getSession(); // Fetch session locally
@@ -403,7 +398,7 @@ export default function ChatPage() {
                                             <p>{m.content}</p>
                                         </div>
                                         <div className="absolute -bottom-6 left-0 text-[10px] text-slate-500 opacity-60">
-                                            {mounted && `${m.timestamp.getHours().toString().padStart(2, '0')}:${m.timestamp.getMinutes().toString().padStart(2, '0')}`}
+                                            {new Date(m.timestamp).toISOString().slice(11, 16)}
                                         </div>
                                     </div>
                                 </motion.div>
