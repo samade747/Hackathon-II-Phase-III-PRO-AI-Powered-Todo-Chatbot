@@ -21,6 +21,9 @@ export default function VoiceControl({ onTranscript }: { onTranscript: (t: strin
                 recognitionRef.current.onresult = (event: any) => {
                     const transcript = event.results[0][0].transcript;
                     onTranscript(transcript);
+                };
+
+                recognitionRef.current.onend = () => {
                     setIsListening(false);
                 };
 
@@ -33,12 +36,18 @@ export default function VoiceControl({ onTranscript }: { onTranscript: (t: strin
     }, [onTranscript]);
 
     const toggleListening = () => {
-        if (isListening) {
-            recognitionRef.current?.stop();
+        if (!recognitionRef.current) return;
+
+        try {
+            if (isListening) {
+                recognitionRef.current.stop();
+            } else {
+                recognitionRef.current.start();
+                setIsListening(true);
+            }
+        } catch (error) {
+            console.error("Speech recognition toggle error:", error);
             setIsListening(false);
-        } else {
-            recognitionRef.current?.start();
-            setIsListening(true);
         }
     };
 

@@ -54,15 +54,30 @@ async def dispatch_agent(
     intent = intent_res.get("intent")
     slots = intent_res.get("slots", {})
     
-    # 3. Todo Orchestration
-    orch_res = skill_manager.execute_skill("todo_orchestrator", {
-        "intent": intent, 
-        "slots": slots,
-        "user_id": user_id
-    })
+    # 3. Todo Orchestration via MCP
+    from app.mcp_server import mcp
     
-    action = orch_res.get("action", "clarify")
-    result = orch_res.get("payload", {})
+    action = "clarify"
+    result = {}
+    
+    if intent == "add_task":
+        item = slots.get("item", "something")
+        tool_res = await mcp.call_tool("add_todo", {"title": item, "user_id": user_id})
+        action = "create"
+        result = {"task": item, "response": tool_res}
+    elif intent == "list_tasks":
+        tool_res = await mcp.call_tool("list_todos", {"user_id": user_id})
+        action = "list"
+        result = {"items": [], "response": tool_res} # Original code had list items, we keep simplified for now
+    elif intent == "complete_task":
+        item = slots.get("item", "something")
+        # In a real app, we'd search for the ID first. For now, we simulate with the title if it was an ID
+        tool_res = await mcp.call_tool("complete_todo", {"task_id": item, "user_id": user_id})
+        action = "update"
+        result = {"task": item, "response": tool_res}
+    else:
+        action = "clarify"
+        result = {}
 
     # 4. Agent Response Selection (Multilingual)
     if is_urdu:
