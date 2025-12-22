@@ -51,6 +51,11 @@ export default function ChatPage() {
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const handleAddTask = async () => {
         if (!newTaskTitle.trim()) return;
         const { data: { session } } = await supabase.auth.getSession(); // Fetch session locally
