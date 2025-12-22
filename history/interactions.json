@@ -13,6 +13,20 @@
       "action": "clarify",
       "message": null,
       "agent_response": "I'm not exactly sure what you mean by '\u062f\u0648\u062f\u06be \u062e\u0631\u06cc\u062f\u0646\u0627 \u06c1\u06d2' yet, but I'm here to help with your tasks. Want to add something to your todo list?"
+    },
+    {
+      "timestamp": "2025-12-22T09:58:30.251334",
+      "utterance": "buy milk",
+      "action": "create",
+      "message": "Milk",
+      "agent_response": "Cool, I've got 'Milk' on your list now. Just let me know if you need anything else!"
+    },
+    {
+      "timestamp": "2025-12-22T09:58:30.328221",
+      "utterance": "\u062f\u0648\u062f\u06be \u062e\u0631\u06cc\u062f\u0646\u0627 \u06c1\u06d2",
+      "action": "clarify",
+      "message": null,
+      "agent_response": "I'm not exactly sure what you mean by '\u062f\u0648\u062f\u06be \u062e\u0631\u06cc\u062f\u0646\u0627 \u06c1\u06d2' yet, but I'm here to help with your tasks. Want to add something to your todo list?"
     }
   ]
 }
