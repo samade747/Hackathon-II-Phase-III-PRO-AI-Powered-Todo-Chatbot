@@ -47,8 +47,39 @@ export default function ChatPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [viewMode, setViewMode] = useState<"active" | "history">("active");
+    const [isAddingTask, setIsAddingTask] = useState(false);
+    const [newTaskTitle, setNewTaskTitle] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    极
+
+    const handleAddTask = async () => {
+        if (!newTaskTitle.trim()) return;
+        const { data: { session } } = await supabase.auth.getSession(); // Fetch session locally
+        if (!session) {
+            router.push("/auth/login"); // Redirect if no session
+            return;
+        }
+        const { error } = await supabase
+            .from('tasks')
+            .insert([{ title: newTaskTitle, status: "pending", user_id: session.user.id }]); // Use session.user.id
+
+        if (!error) {
+            setNewTaskTitle("");
+            setIsAddingTask(false);
+            fetchTasks();
+        }
+    };
+
+    const updateTaskDetails = async (id: string, updates: Partial<Task>) => {
+        const { error } = await supabase
+            .from('tasks')
+            .update(updates)
+            .eq('id', id);
+
+        if (!error) {
+            fetchTasks();
+            if (selectedTask) setSelectedTask({ ...selectedTask, ...updates });
+        }
+    };
 
     useEffect(() => {
         const checkUser = async () => {
