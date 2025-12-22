@@ -62,11 +62,15 @@ export default function ChatPage() {
             .from('tasks')
             .insert([{ title: newTaskTitle, status: "pending", user_id: session.user.id }]); // Use session.user.id
 
-        if (!error) {
-            setNewTaskTitle("");
-            setIsAddingTask(false);
-            fetchTasks();
+        if (error) {
+            console.error("Task creation error:", error);
+            alert("Objective failed! Make sure the 'tasks' table exists in Supabase. Check console for details. 📡");
+            return;
         }
+
+        setNewTaskTitle("");
+        setIsAddingTask(false);
+        fetchTasks();
     };
 
     const updateTaskDetails = async (id: string, updates: Partial<Task>) => {
@@ -134,7 +138,8 @@ export default function ChatPage() {
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            const response = await fetch("http://localhost:8000/api/agent/dispatch", {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            const response = await fetch(`${apiUrl}/api/agent/dispatch`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -142,6 +147,11 @@ export default function ChatPage() {
                 },
                 body: JSON.stringify({ utterance: text })
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || "API call failed");
+            }
 
             const data = await response.json();
 
@@ -188,7 +198,13 @@ export default function ChatPage() {
             .update({ status: newStatus })
             .eq('id', id);
 
-        if (!error) fetchTasks();
+        if (error) {
+            console.error("Task update error:", error);
+            alert("Failed to update objective in the neural net. 💾");
+            return;
+        }
+
+        fetchTasks();
     };
 
     const deleteTask = async (id: string) => {
@@ -197,7 +213,13 @@ export default function ChatPage() {
             .delete()
             .eq('id', id);
 
-        if (!error) fetchTasks();
+        if (error) {
+            console.error("Task deletion error:", error);
+            alert("Failed to erase objective data. 🛡️");
+            return;
+        }
+
+        fetchTasks();
     };
 
     const handleTranscript = (transcript: string) => {
