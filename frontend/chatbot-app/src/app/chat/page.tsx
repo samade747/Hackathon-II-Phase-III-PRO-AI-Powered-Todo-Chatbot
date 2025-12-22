@@ -199,12 +199,6 @@ export default function ChatPage() {
                                         : "bg-slate-100 text-slate-800 rounded-bl-none border border-slate-200/50"
                                 )}>
                                     <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{m.content}</p>
-                                    <div className={cn(
-                                        "text-[10px] mt-2 font-medium opacity-50",
-                                        m.role === "user" ? "text-right" : "text-left"
-                                    )}>
-                                        {new Date(m.timestamp).toISOString().slice(11, 16)}
-                                    </div>
                                 </div>
                             </motion.div>
                         ))}
