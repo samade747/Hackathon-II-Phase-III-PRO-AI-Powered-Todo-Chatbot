@@ -363,13 +363,18 @@ export default function ChatPage() {
                                         m.role === "user" ? "ml-auto items-end" : "items-start"
                                     )}
                                 >
-                                    <div className={cn(
-                                        "px-6 py-4 rounded-[2rem] text-sm font-medium shadow-2xl ring-1 ring-white/5",
-                                        m.role === "user"
-                                            ? "bg-indigo-600 text-white rounded-br-none"
-                                            : "bg-white/5 backdrop-blur-xl text-slate-200 rounded-bl-none border border-white/5"
-                                    )}>
-                                        {m.content}
+                                    <div className="group relative">
+                                        <div className={cn(
+                                            "px-6 py-4 rounded-[2rem] text-sm font-medium shadow-2xl ring-1 ring-white/5",
+                                            m.role === "user"
+                                                ? "bg-indigo-600 text-white rounded-br-none"
+                                                : "bg-white/5 backdrop-blur-xl text-slate-200 rounded-bl-none border border-white/5"
+                                        )}>
+                                            <p>{m.content}</p>
+                                        </div>
+                                        <div className="absolute -bottom-6 left-0 text-[10px] text-slate-500 opacity-60">
+                                            {mounted && m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        </div>
                                     </div>
                                 </motion.div>
                             ))}
