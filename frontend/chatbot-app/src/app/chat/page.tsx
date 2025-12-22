@@ -30,6 +30,11 @@ export default function ChatPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -203,7 +208,7 @@ export default function ChatPage() {
                                         "text-[10px] mt-2 font-medium opacity-50",
                                         m.role === "user" ? "text-right" : "text-left"
                                     )}>
-                                        {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {mounted && m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                 </div>
                             </motion.div>

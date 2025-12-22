@@ -230,7 +230,6 @@ export default function ChatPage() {
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-150 contrast-150 mix-blend-overlay" />
                 <div className="absolute inset-x-0 inset-y-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:32px_32px] opacity-20" />
             </div>
-            极
 
             {/* Mobile Sidebar Overlay */}
             <AnimatePresence>
@@ -455,7 +454,6 @@ export default function ChatPage() {
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                                 {viewMode === "active" ? "Current Objectives" : "Archived Progress"}
                             </span>
-                            极
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
                                 {tasks.filter(t => viewMode === "active" ? t.status === "pending" : t.status === "completed").length} Total
                             </span>
