@@ -66,9 +66,9 @@ export default function Home() {
           className="relative mb-12 max-w-6xl"
         >
           <h1 className="text-8xl sm:text-9xl lg:text-[11rem] font-black tracking-tighter leading-[0.8] flex flex-col items-center">
-            <span className="text-white drop-shadow-2xl">AI Agentixz</span>
-            <span className="text-indigo-500 drop-shadow-[0_0_30px_rgba(79,70,229,0.4)]">Next-Gen</span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-100 via-yellow-400 to-yellow-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 drop-shadow-2xl">AI Agentixz</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-600 drop-shadow-[0_0_30px_rgba(79,70,229,0.4)]">Next-Gen</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-orange-500">
               Todo Chatbot
             </span>
           </h1>
