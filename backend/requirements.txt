@@ -10,3 +10,4 @@ pytest-asyncio
 supabase
 python-dotenv
 mcp
+openai

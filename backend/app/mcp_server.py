@@ -59,3 +59,6 @@ async def delete_todo(task_id: str, user_id: str) -> str:
         return f"Task {task_id} deleted successfully."
     except Exception as e:
         return f"Error deleting task: {str(e)}"
+
+if __name__ == "__main__":
+    mcp.run()
