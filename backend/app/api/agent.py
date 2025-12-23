@@ -60,7 +60,7 @@ async def dispatch_agent(
     action = "clarify"
     result = {}
     
-    if intent == "add_task":
+    if intent == "add_task" or intent == "create":
         item = slots.get("item", "something")
         priority = slots.get("priority", "medium")
         recurrence = slots.get("recurrence", "none")
@@ -75,12 +75,16 @@ async def dispatch_agent(
     elif intent == "list_tasks":
         tool_res = await mcp.call_tool("list_todos", {"user_id": user_id})
         action = "list"
-        result = {"items": [], "response": tool_res} # Original code had list items, we keep simplified for now
+        result = {"items": [], "response": tool_res} 
     elif intent == "complete_task":
         item = slots.get("item", "something")
-        # In a real app, we'd search for the ID first. For now, we simulate with the title if it was an ID
         tool_res = await mcp.call_tool("complete_todo", {"task_id": item, "user_id": user_id})
         action = "update"
+        result = {"task": item, "response": tool_res}
+    elif intent == "delete_task":
+        item = slots.get("item", "something")
+        tool_res = await mcp.call_tool("delete_todo", {"task_id": item, "user_id": user_id})
+        action = "delete"
         result = {"task": item, "response": tool_res}
     else:
         action = "clarify"
@@ -92,8 +96,8 @@ async def dispatch_agent(
             message = f"اوکے جی، میں نے '{result.get('task')}' آپ کی لسٹ میں شامل کر دیا ہے۔ 🚀"
         elif action == "update":
             message = f"زبردست! '{result.get('task')}' مکمل ہو گیا ہے۔ ✅"
-        elif action == "list":
-            message = "یہ رہی آپ کی موجودہ لسٹ۔ 📋"
+        elif action == "delete":
+            message = f"اوکے، میں نے '{result.get('task')}' آپ کی لسٹ سے حذف کر دیا ہے۔ 🗑️"
         else:
             message = "معذرت، میں سمجھ نہیں سکا۔ کیا آپ دوبارہ بتا سکتے ہیں؟ 🧠"
     else:
@@ -101,6 +105,8 @@ async def dispatch_agent(
             message = f"Got it! I've added '{result.get('task')}' to your list. Mission started! 🚀"
         elif action == "update":
             message = f"Mission accomplished! '{result.get('task')}' is now marked as completed. ✅"
+        elif action == "delete":
+            message = f"Target eliminated! '{result.get('task')}' has been removed from your objectives. 🗑️"
         elif action == "list":
             message = "Accessing the archives... Here are your current objectives. 📋"
         else:
