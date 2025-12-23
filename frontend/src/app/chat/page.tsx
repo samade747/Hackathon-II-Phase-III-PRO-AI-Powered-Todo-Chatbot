@@ -57,7 +57,7 @@ const PriorityChart = ({ tasks }: { tasks: Task[] }) => {
     );
 };
 
-const TaskTimer = ({ task, onUpdate }: { task: Task; onUpdate: (id: string, updates: Partial<Task>) => void }) => {
+const TaskTimer = ({ task, onUpdate, callMcpTool }: { task: Task; onUpdate: (id: string, updates: Partial<Task>) => void; callMcpTool: (name: string, args: any) => Promise<any> }) => {
     const [elapsed, setElapsed] = useState(0);
     const [isRunning, setIsRunning] = useState(!!task.timer_started_at);
 
@@ -77,22 +77,11 @@ const TaskTimer = ({ task, onUpdate }: { task: Task; onUpdate: (id: string, upda
     }, [isRunning, task.timer_started_at, task.total_time_spent]);
 
     const handleToggle = async () => {
-        if (isRunning) {
-            const now = new Date();
-            const start = new Date(task.timer_started_at!);
-            const sessionSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-            const newTotal = (task.total_time_spent || 0) + sessionSeconds;
-
-            onUpdate(task.id, {
-                total_time_spent: newTotal,
-                timer_started_at: null
-            });
-            setIsRunning(false);
-        } else {
-            onUpdate(task.id, {
-                timer_started_at: new Date().toISOString()
-            });
-            setIsRunning(true);
+        const action = isRunning ? "stop" : "start";
+        const res = await callMcpTool("manage_timer", { task_id: task.id, action });
+        if (res) {
+            setIsRunning(!isRunning);
+            // fetchTasks is called by the component that passes callMcpTool
         }
     };
 
@@ -234,54 +223,74 @@ export default function ChatPage() {
         setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
     };
 
+    const callMcpTool = async (name: string, args: any) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            router.push("/auth/login");
+            return null;
+        }
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        try {
+            const response = await fetch(`${apiUrl}/api/agent/tool`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({ name, arguments: args })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                fetchTasks();
+                return data.result;
+            } else {
+                throw new Error(`Tool ${name} failed`);
+            }
+        } catch (error) {
+            console.error(error);
+            addToast(`Mission operation failed: ${name}`, "error");
+            return null;
+        }
+    };
+
     const handleAddTask = async (title?: string, priority: Task['priority'] = 'medium', recurrence: Task['recurrence'] = 'none') => {
         const inputContent = title || newTaskTitle;
         if (!inputContent.trim()) return;
 
-        // Bulk Add Logic: Split by new lines
+        // Split by new lines for bulk add
         const titles = inputContent.split('\n').filter(t => t.trim().length > 0);
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-            router.push("/auth/login");
-            return;
+        if (titles.length === 0) return;
+
+        if (titles.length === 1) {
+            const res = await callMcpTool("add_todo", {
+                title: titles[0].trim(),
+                priority,
+                recurrence
+            });
+            if (res) {
+                addToast("Objective synchronized successfully. 🚀");
+            }
+        } else {
+            const res = await callMcpTool("add_todos_bulk", {
+                titles,
+                priority,
+                recurrence
+            });
+            if (res) {
+                addToast(`Bulk Deployment: ${titles.length} objectives synchronized. 🚀`);
+            }
         }
 
-        const newTasksToInsert = titles.map(t => ({
-            title: t.trim(),
-            status: "pending",
-            user_id: session.user.id,
-            priority,
-            recurrence
-        }));
-
-        // Optimistic UI Update
-        const tempTasks = newTasksToInsert.map(t => ({
-            ...t,
-            id: Math.random().toString(),
-        })) as Task[];
-
-        setTasks(prev => [...tempTasks, ...prev]);
-
-        const { error } = await supabase
-            .from('tasks')
-            .insert(newTasksToInsert);
-
-        if (error) {
-            console.error("Task creation error:", error);
-            // Revert optimistic update
-            setTasks(prev => prev.filter(t => !tempTasks.some(tt => tt.id === t.id)));
-            addToast("Objective deployment failed. 📡", "error");
-            return;
-        }
-
-        addToast(titles.length > 1 ? `${titles.length} Objectives synchronized. 🚀` : "Objective synchronized successfully. 🚀");
         setNewTaskTitle("");
         setIsAddingTask(false);
-        fetchTasks();
     };
 
     const updateTaskDetails = async (id: string, updates: Partial<Task>) => {
+        // We still use direct Supabase for description/title updates for speed,
+        // but mission-critical status/timer changes should go through tools.
         const { error } = await supabase
             .from('tasks')
             .update(updates)
@@ -418,86 +427,65 @@ export default function ChatPage() {
     };
 
     const toggleTask = async (id: string, currentStatus: string) => {
-        const newStatus = currentStatus === "pending" ? "completed" : "pending";
-        const task = tasks.find(t => t.id === id);
-        if (!task) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
 
-        // Optimistic toggle
-        setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus as any } : t));
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-        // Update status and stop timer if it's running
-        const updates: any = {
-            status: newStatus,
-            last_completed_at: newStatus === 'completed' ? new Date().toISOString() : null
-        };
+        try {
+            const response = await fetch(`${apiUrl}/api/agent/tool`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    name: "toggle_todo",
+                    arguments: { task_id: id }
+                })
+            });
 
-        if (newStatus === 'completed' && task.timer_started_at) {
-            const now = new Date();
-            const start = new Date(task.timer_started_at);
-            const sessionSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
-            updates.total_time_spent = (task.total_time_spent || 0) + sessionSeconds;
-            updates.timer_started_at = null;
-        }
-
-        const { error } = await supabase
-            .from('tasks')
-            .update(updates)
-            .eq('id', id);
-
-        if (error) {
-            console.error("Task update error:", error);
-            setTasks(prev => prev.map(t => t.id === id ? { ...t, status: currentStatus as any } : t));
-            addToast("Failed to update objective in the neural net. 💾", "error");
-            return;
-        }
-
-        // --- Recurrence Logic: "Mission Respawn" ---
-        if (newStatus === 'completed' && task.recurrence && task.recurrence !== 'none') {
-            const nextDueDate = new Date();
-            if (task.recurrence === 'daily') nextDueDate.setDate(nextDueDate.getDate() + 1);
-            else if (task.recurrence === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
-            else if (task.recurrence === 'monthly') nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-
-            const { error: respawnError } = await supabase
-                .from('tasks')
-                .insert([{
-                    title: task.title,
-                    status: "pending",
-                    user_id: user?.id,
-                    priority: task.priority,
-                    recurrence: task.recurrence,
-                    due_date: nextDueDate.toISOString(),
-                    description: task.description
-                }]);
-
-            if (!respawnError) {
-                addToast("Objective recurring: Mission Respawned. ♻️", "info");
+            if (response.ok) {
+                const data = await response.json();
+                addToast(data.result);
+                fetchTasks();
+            } else {
+                throw new Error("Toggle failed");
             }
+        } catch (error) {
+            addToast("Failed to update objective in the neural net. 💾", "error");
         }
-
-        fetchTasks();
     };
 
     const deleteTask = async (id: string) => {
-        const taskToDelete = tasks.find(t => t.id === id);
-        if (!taskToDelete) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
 
-        setTasks(prev => prev.filter(t => t.id !== id));
-        addToast(`Erased objective: ${taskToDelete.title}`, "info");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-        const { error } = await supabase
-            .from('tasks')
-            .delete()
-            .eq('id', id);
+        try {
+            const response = await fetch(`${apiUrl}/api/agent/tool`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    name: "delete_todo",
+                    arguments: { task_id: id }
+                })
+            });
 
-        if (error) {
-            console.error("Task deletion error:", error);
-            setTasks(prev => [taskToDelete, ...prev]);
+            if (response.ok) {
+                const data = await response.json();
+                addToast(data.result, "info");
+                fetchTasks();
+            } else {
+                throw new Error("Deletion failed");
+            }
+        } catch (error) {
             addToast("Failed to erase objective data. 🛡️", "error");
-            return;
         }
-
-        fetchTasks();
     };
 
     const handleTranscript = (transcript: string) => {
@@ -836,7 +824,7 @@ export default function ChatPage() {
                                         <input type="text" value={selectedTask.title} onChange={(e) => updateTaskDetails(selectedTask.id, { title: e.target.value })} className="w-full bg-transparent border-none focus:ring-0 text-2xl font-black p-0 uppercase" />
                                     </div>
 
-                                    <TaskTimer task={selectedTask} onUpdate={updateTaskDetails} />
+                                    <TaskTimer task={selectedTask} onUpdate={updateTaskDetails} callMcpTool={callMcpTool} />
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Priority</div><select value={selectedTask.priority || 'medium'} onChange={(e) => updateTaskDetails(selectedTask.id, { priority: e.target.value as any })} className="bg-transparent border-none focus:ring-0 text-xs font-bold p-0 uppercase block w-full"><option className="bg-[#1E293B]" value="low">LOW</option><option className="bg-[#1E293B]" value="medium">MEDIUM</option><option className="bg-[#1E293B]" value="high">HIGH</option><option className="bg-[#1E293B]" value="urgent">URGENT</option></select></div>

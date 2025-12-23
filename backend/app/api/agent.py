@@ -86,6 +86,12 @@ async def dispatch_agent(
         tool_res = await mcp.call_tool("delete_todo", {"task_id": item, "user_id": user_id})
         action = "delete"
         result = {"task": item, "response": tool_res}
+    elif intent == "manage_timer":
+        item = slots.get("item", "something")
+        action_timer = slots.get("timer_action", "start")
+        tool_res = await mcp.call_tool("manage_timer", {"task_id": item, "user_id": user_id, "action": action_timer})
+        action = "timer"
+        result = {"task": item, "timer_action": action_timer, "response": tool_res}
     else:
         action = "clarify"
         result = {}
@@ -98,6 +104,8 @@ async def dispatch_agent(
             message = f"زبردست! '{result.get('task')}' مکمل ہو گیا ہے۔ ✅"
         elif action == "delete":
             message = f"اوکے، میں نے '{result.get('task')}' آپ کی لسٹ سے حذف کر دیا ہے۔ 🗑️"
+        elif action == "timer":
+            message = f"اوکے، '{result.get('task')}' کے لیے کلاک {result.get('timer_action') == 'start' and 'شروع' or 'بند'} ہو گیا ہے۔ ⏱️"
         elif action == "list":
             message = "Accessing the archives... یہ رہی آپ کی موجودہ لسٹ۔ 📋"
         else:
@@ -109,6 +117,8 @@ async def dispatch_agent(
             message = f"Mission accomplished! '{result.get('task')}' is now marked as completed. ✅"
         elif action == "delete":
             message = f"Target eliminated! '{result.get('task')}' has been removed from your objectives. 🗑️"
+        elif action == "timer":
+            message = f"Mission clock {result.get('timer_action')}ed for '{result.get('task')}'. ⏱️"
         elif action == "list":
             message = "Accessing the archives... Here are your current objectives. 📋"
         else:
@@ -128,3 +138,27 @@ async def dispatch_agent(
         result=result,
         message=message
     )
+
+@router.post("/agent/tool")
+async def call_tool_direct(request: Request, user_id: str = Depends(verify_jwt)):
+    """
+    Directly call an MCP tool. Used for UI interactions (clicks) to ensure consistency.
+    """
+    body = await request.json()
+    tool_name = body.get("name")
+    arguments = body.get("arguments", {})
+    
+    # Force user_id for security
+    arguments["user_id"] = user_id
+    
+    try:
+        from .agent import mcp # Ensure we use the same mcp instance
+        result = await mcp.call_tool(tool_name, arguments)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/agent/history")
+async def get_history(user_id: str = Depends(verify_jwt)):
+    response = supabase.table("interactions").select("*").eq("user_id", user_id).order("created_at", { "ascending": False }).limit(20).execute()
+    return response.data

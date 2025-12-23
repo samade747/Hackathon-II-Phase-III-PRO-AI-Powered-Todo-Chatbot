@@ -11,20 +11,36 @@ class SkillManager:
         self.skills: Dict[str, Any] = {}
         self.load_skills()
         
-        # Initialize OpenAI client if key is present
-        api_key = os.getenv("OPENAI_API_KEY")
-        api_base = os.getenv("OPENAI_API_BASE") # Support for OpenRouter/Gemini Proxy
+        self.clients: List[Dict[str, Any]] = []
         
-        if api_key:
-            try:
-                self.client = OpenAI(api_key=api_key, base_url=api_base)
-                print("🧠 SkillManager: World-Class Intelligence initialized (LLM ON)")
-            except Exception as e:
-                print(f"⚠️ SkillManager: Failed to initialize LLM client: {e}")
-                self.client = None
+        # Initialize providers in order of preference
+        # 1. OpenAI (Primary)
+        self._add_provider("OPENAI_API_KEY", "OPENAI_API_BASE", "gpt-4o-mini", "OpenAI")
+        
+        # 2. OpenRouter (Secondary)
+        self._add_provider("OPENROUTER_API_KEY", None, "qwen/qwen-2.5-72b-instruct", "OpenRouter", "https://openrouter.ai/api/v1")
+        
+        # 3. Groq (Tertiary)
+        self._add_provider("GROQ_API_KEY", None, "llama-3.1-70b-versatile", "Groq", "https://api.groq.com/openai/v1")
+        
+        # 4. Gemini (Quaternary)
+        self._add_provider("GEMINI_API_KEY", None, "gemini-1.5-flash", "Gemini", "https://generativelanguage.googleapis.com/v1beta/openai")
+
+        if not self.clients:
+            print("⚠️ SkillManager: All LLM keys missing. Falling back to keyword logic.")
         else:
-            print("⚠️ SkillManager: OPENAI_API_KEY missing. Falling back to keyword logic.")
-            self.client = None
+            print(f"🧠 SkillManager: World-Class Intelligence initialized with {len(self.clients)} brains.")
+
+    def _add_provider(self, env_key: str, base_env_key: Optional[str], model: str, name: str, default_base: Optional[str] = None):
+        key = os.getenv(env_key)
+        base = os.getenv(base_env_key) if base_env_key else default_base
+        if key:
+            try:
+                client = OpenAI(api_key=key, base_url=base)
+                self.clients.append({"name": name, "client": client, "model": model})
+                print(f"✅ Brain Linked: {name}")
+            except Exception as e:
+                print(f"⚠️ SkillManager: Failed to link {name}: {e}")
 
     def load_skills(self):
         if not self.skills_dir.exists():
@@ -43,22 +59,29 @@ class SkillManager:
         return self.skills.get(name)
 
     def _get_llm_json(self, prompt: str) -> Optional[Dict[str, Any]]:
-        """Helper to get structured JSON from LLM"""
-        if not self.client:
+        """Helper to get structured JSON from LLM with automatic fallback"""
+        if not self.clients:
             return None
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are a specialized AI Brain for a Todo Chatbot. Return only valid JSON."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"}
-            )
-            return json.loads(response.choices[0].message.content)
-        except Exception as e:
-            print(f"❌ SkillManager: LLM Error: {e}")
-            return None
+            
+        for provider in self.clients:
+            try:
+                print(f"📡 Brain {provider['name']} attempting extraction...")
+                response = provider['client'].chat.completions.create(
+                    model=provider['model'],
+                    messages=[
+                        {"role": "system", "content": "You are a specialized AI Brain for a Todo Chatbot. Return only valid JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    timeout=10 # Prevent hanging
+                )
+                return json.loads(response.choices[0].message.content)
+            except Exception as e:
+                print(f"⚠️ SkillManager: Brain {provider['name']} failed: {e}. Falling back...")
+                continue
+        
+        print("❌ SkillManager: All brains failed to respond.")
+        return None
 
     def execute_skill(self, name: str, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -72,25 +95,25 @@ class SkillManager:
         
         # --- WORLD-CLASS INTENT EXTRACTION ---
         if name == "intent_extractor":
-            if self.client:
-                prompt = f"""
-                Analyze the following user utterance and extract the intent and slots.
-                Intents: add_task, list_tasks, complete_task, delete_task, clarify.
-                Slots for 'add_task': item (title of the task), priority (urgent, high, medium, low), recurrence (daily, weekly, monthly, none).
-                Slots for 'complete_task': item (title or ID of the task).
-                Slots for 'delete_task': item (title or ID of the task).
+            prompt = f"""
+            Analyze the following user utterance and extract the intent and slots.
+            Intents: add_task, list_tasks, complete_task, delete_task, manage_timer, clarify.
+            Slots for 'add_task': item (title of the task), priority (urgent, high, medium, low), recurrence (daily, weekly, monthly, none).
+            Slots for 'complete_task': item (title or ID of the task).
+            Slots for 'delete_task': item (title or ID of the task).
+            Slots for 'manage_timer': item (title or ID of the task), timer_action (start, stop).
 
-                Utterance: "{utterance}"
+            Utterance: "{utterance}"
 
-                Response Format:
-                {{
-                    "intent": "intent_name",
-                    "slots": {{ ... }}
-                }}
-                """
-                llm_res = self._get_llm_json(prompt)
-                if llm_res:
-                    return llm_res
+            Response Format:
+            {{
+                "intent": "intent_name",
+                "slots": {{ ... }}
+            }}
+            """
+            llm_res = self._get_llm_json(prompt)
+            if llm_res:
+                return llm_res
 
             # --- FALLBACK KEYWORD LOGIC ---
             u_low = utterance.lower()
@@ -137,7 +160,7 @@ class SkillManager:
             # Detect Urdu using unicode range
             is_urdu = any("\u0600" <= char <= "\u06FF" for char in utterance)
             
-            if is_urdu and self.client:
+            if is_urdu:
                 prompt = f"""
                 Translate the following Urdu utterance into English for a task management system.
                 Also detect the language correctly.
