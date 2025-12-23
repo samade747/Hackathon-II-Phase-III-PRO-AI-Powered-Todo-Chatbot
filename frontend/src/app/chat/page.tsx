@@ -21,6 +21,108 @@ interface Message {
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
+const PriorityChart = ({ tasks }: { tasks: Task[] }) => {
+    const activeTasks = tasks.filter(t => t.status === 'pending');
+    const counts = {
+        urgent: activeTasks.filter(t => t.priority === 'urgent').length,
+        high: activeTasks.filter(t => t.priority === 'high').length,
+        medium: activeTasks.filter(t => t.priority === 'medium').length,
+        low: activeTasks.filter(t => t.priority === 'low').length,
+    };
+    const max = Math.max(...Object.values(counts), 1);
+
+    return (
+        <div className="bg-white/5 border border-white/5 rounded-[2rem] p-6 space-y-4">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-1 block mb-2">Tactical Distribution</span>
+            <div className="flex items-end justify-between gap-2 h-24 px-2">
+                {Object.entries(counts).map(([p, count]) => (
+                    <div key={p} className="flex-1 flex flex-col items-center gap-2 group">
+                        <div className="relative w-full flex flex-col justify-end h-full">
+                            <motion.div
+                                initial={{ height: 0 }}
+                                animate={{ height: `${(count / max) * 100}%` }}
+                                className={cn(
+                                    "w-full rounded-t-lg transition-all duration-500",
+                                    p === 'urgent' ? "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]" :
+                                        p === 'high' ? "bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]" :
+                                            p === 'low' ? "bg-slate-500" : "bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                                )}
+                            />
+                        </div>
+                        <span className="text-[8px] font-black uppercase tracking-tighter text-slate-500 group-hover:text-white transition-colors">{p}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const TaskTimer = ({ task, onUpdate }: { task: Task; onUpdate: (id: string, updates: Partial<Task>) => void }) => {
+    const [elapsed, setElapsed] = useState(0);
+    const [isRunning, setIsRunning] = useState(!!task.timer_started_at);
+
+    useEffect(() => {
+        let interval: any;
+        if (isRunning && task.timer_started_at) {
+            interval = setInterval(() => {
+                const now = new Date();
+                const start = new Date(task.timer_started_at!);
+                const currentSessionSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+                setElapsed((task.total_time_spent || 0) + currentSessionSeconds);
+            }, 1000);
+        } else {
+            setElapsed(task.total_time_spent || 0);
+        }
+        return () => clearInterval(interval);
+    }, [isRunning, task.timer_started_at, task.total_time_spent]);
+
+    const handleToggle = async () => {
+        if (isRunning) {
+            const now = new Date();
+            const start = new Date(task.timer_started_at!);
+            const sessionSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+            const newTotal = (task.total_time_spent || 0) + sessionSeconds;
+
+            onUpdate(task.id, {
+                total_time_spent: newTotal,
+                timer_started_at: null
+            });
+            setIsRunning(false);
+        } else {
+            onUpdate(task.id, {
+                timer_started_at: new Date().toISOString()
+            });
+            setIsRunning(true);
+        }
+    };
+
+    const formatTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div className="flex items-center gap-4 bg-white/5 border border-white/5 rounded-2xl p-4">
+            <div className="flex-1">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Mission Duration</div>
+                <div className="text-2xl font-black font-mono text-indigo-400">{formatTime(elapsed)}</div>
+            </div>
+            <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleToggle}
+                className={cn(
+                    "p-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
+                    isRunning ? "bg-red-500/20 text-red-500 border border-red-500/20" : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/20"
+                )}
+            >
+                {isRunning ? "Pause Mission" : "Engage Objective"}
+            </motion.button>
+        </div>
+    );
+};
+
 interface Task {
     id: string;
     title: string;
@@ -30,6 +132,8 @@ interface Task {
     priority?: "low" | "medium" | "high" | "urgent";
     recurrence?: "none" | "daily" | "weekly" | "monthly";
     tags?: string[];
+    total_time_spent?: number;
+    timer_started_at?: string | null;
 }
 
 const TaskStats = ({ tasks }: { tasks: Task[] }) => {
@@ -131,8 +235,11 @@ export default function ChatPage() {
     };
 
     const handleAddTask = async (title?: string, priority: Task['priority'] = 'medium', recurrence: Task['recurrence'] = 'none') => {
-        const finalTitle = title || newTaskTitle;
-        if (!finalTitle.trim()) return;
+        const inputContent = title || newTaskTitle;
+        if (!inputContent.trim()) return;
+
+        // Bulk Add Logic: Split by new lines
+        const titles = inputContent.split('\n').filter(t => t.trim().length > 0);
 
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
@@ -140,35 +247,35 @@ export default function ChatPage() {
             return;
         }
 
-        // Optimistic UI Update
-        const tempId = Math.random().toString();
-        const newTask: Task = {
-            id: tempId,
-            title: finalTitle,
+        const newTasksToInsert = titles.map(t => ({
+            title: t.trim(),
             status: "pending",
+            user_id: session.user.id,
             priority,
             recurrence
-        };
-        setTasks(prev => [newTask, ...prev]);
+        }));
+
+        // Optimistic UI Update
+        const tempTasks = newTasksToInsert.map(t => ({
+            ...t,
+            id: Math.random().toString(),
+        })) as Task[];
+
+        setTasks(prev => [...tempTasks, ...prev]);
 
         const { error } = await supabase
             .from('tasks')
-            .insert([{
-                title: finalTitle,
-                status: "pending",
-                user_id: session.user.id,
-                priority,
-                recurrence
-            }]);
+            .insert(newTasksToInsert);
 
         if (error) {
             console.error("Task creation error:", error);
-            setTasks(prev => prev.filter(t => t.id !== tempId));
+            // Revert optimistic update
+            setTasks(prev => prev.filter(t => !tempTasks.some(tt => tt.id === t.id)));
             addToast("Objective deployment failed. 📡", "error");
             return;
         }
 
-        addToast("Objective synchronized successfully. 🚀");
+        addToast(titles.length > 1 ? `${titles.length} Objectives synchronized. 🚀` : "Objective synchronized successfully. 🚀");
         setNewTaskTitle("");
         setIsAddingTask(false);
         fetchTasks();
@@ -237,16 +344,39 @@ export default function ChatPage() {
         setIsLoading(true);
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+            if (!session || sessionError) {
+                setMessages((prev) => [...prev, {
+                    role: "assistant",
+                    content: "Your session has expired or is invalid. Please sign out and sign in again to re-establish a secure link! 🔐",
+                    timestamp: new Date(),
+                    id: (Date.now() + 1).toString()
+                }]);
+                setIsLoading(false);
+                return;
+            }
+
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
             const response = await fetch(`${apiUrl}/api/agent/dispatch`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${session?.access_token || ""}`
+                    "Authorization": `Bearer ${session.access_token}`
                 },
                 body: JSON.stringify({ utterance: text })
             });
+
+            if (response.status === 401) {
+                setMessages((prev) => [...prev, {
+                    role: "assistant",
+                    content: "Security alert! The server didn't recognize your credentials. Try refreshing the page or logging back in. 🛡️",
+                    timestamp: new Date(),
+                    id: (Date.now() + 1).toString()
+                }]);
+                setIsLoading(false);
+                return;
+            }
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
@@ -289,12 +419,29 @@ export default function ChatPage() {
 
     const toggleTask = async (id: string, currentStatus: string) => {
         const newStatus = currentStatus === "pending" ? "completed" : "pending";
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
         // Optimistic toggle
         setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus as any } : t));
 
+        // Update status and stop timer if it's running
+        const updates: any = {
+            status: newStatus,
+            last_completed_at: newStatus === 'completed' ? new Date().toISOString() : null
+        };
+
+        if (newStatus === 'completed' && task.timer_started_at) {
+            const now = new Date();
+            const start = new Date(task.timer_started_at);
+            const sessionSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+            updates.total_time_spent = (task.total_time_spent || 0) + sessionSeconds;
+            updates.timer_started_at = null;
+        }
+
         const { error } = await supabase
             .from('tasks')
-            .update({ status: newStatus })
+            .update(updates)
             .eq('id', id);
 
         if (error) {
@@ -302,6 +449,30 @@ export default function ChatPage() {
             setTasks(prev => prev.map(t => t.id === id ? { ...t, status: currentStatus as any } : t));
             addToast("Failed to update objective in the neural net. 💾", "error");
             return;
+        }
+
+        // --- Recurrence Logic: "Mission Respawn" ---
+        if (newStatus === 'completed' && task.recurrence && task.recurrence !== 'none') {
+            const nextDueDate = new Date();
+            if (task.recurrence === 'daily') nextDueDate.setDate(nextDueDate.getDate() + 1);
+            else if (task.recurrence === 'weekly') nextDueDate.setDate(nextDueDate.getDate() + 7);
+            else if (task.recurrence === 'monthly') nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+
+            const { error: respawnError } = await supabase
+                .from('tasks')
+                .insert([{
+                    title: task.title,
+                    status: "pending",
+                    user_id: user?.id,
+                    priority: task.priority,
+                    recurrence: task.recurrence,
+                    due_date: nextDueDate.toISOString(),
+                    description: task.description
+                }]);
+
+            if (!respawnError) {
+                addToast("Objective recurring: Mission Respawned. ♻️", "info");
+            }
         }
 
         fetchTasks();
@@ -408,6 +579,7 @@ export default function ChatPage() {
                     </motion.button>
 
                     <TaskStats tasks={tasks} />
+                    <PriorityChart tasks={tasks} />
 
                     <div className="space-y-4">
                         <div className="flex items-center justify-between px-2">
@@ -595,7 +767,19 @@ export default function ChatPage() {
                         <AnimatePresence>
                             {isAddingTask && (
                                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-6 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
-                                    <input autoFocus type="text" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} onKeyPress={(e) => e.key === "Enter" && handleAddTask()} placeholder="Objective title..." className="w-full bg-transparent border-none focus:ring-0 text-white font-bold" />
+                                    <textarea
+                                        autoFocus
+                                        value={newTaskTitle}
+                                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleAddTask();
+                                            }
+                                        }}
+                                        placeholder="Add objectives (Enter to deploy, Shift+Enter for multiple)..."
+                                        className="w-full bg-transparent border-none focus:ring-0 text-white font-bold resize-none h-24"
+                                    />
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -651,6 +835,9 @@ export default function ChatPage() {
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">OBJECTIVE</label>
                                         <input type="text" value={selectedTask.title} onChange={(e) => updateTaskDetails(selectedTask.id, { title: e.target.value })} className="w-full bg-transparent border-none focus:ring-0 text-2xl font-black p-0 uppercase" />
                                     </div>
+
+                                    <TaskTimer task={selectedTask} onUpdate={updateTaskDetails} />
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Priority</div><select value={selectedTask.priority || 'medium'} onChange={(e) => updateTaskDetails(selectedTask.id, { priority: e.target.value as any })} className="bg-transparent border-none focus:ring-0 text-xs font-bold p-0 uppercase block w-full"><option className="bg-[#1E293B]" value="low">LOW</option><option className="bg-[#1E293B]" value="medium">MEDIUM</option><option className="bg-[#1E293B]" value="high">HIGH</option><option className="bg-[#1E293B]" value="urgent">URGENT</option></select></div>
                                         <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Repeat</div><select value={selectedTask.recurrence || 'none'} onChange={(e) => updateTaskDetails(selectedTask.id, { recurrence: e.target.value as any })} className="bg-transparent border-none focus:ring-0 text-xs font-bold p-0 uppercase block w-full"><option className="bg-[#1E293B]" value="none">NONE</option><option className="bg-[#1E293B]" value="daily">DAILY</option><option className="bg-[#1E293B]" value="weekly">WEEKLY</option><option className="bg-[#1E293B]" value="monthly">MONTHLY</option></select></div>

@@ -5,7 +5,9 @@ alter table tasks
 add column if not exists priority text check (priority in ('low', 'medium', 'high', 'urgent')) default 'medium',
 add column if not exists recurrence text check (recurrence in ('none', 'daily', 'weekly', 'monthly')) default 'none',
 add column if not exists last_completed_at timestamp with time zone,
-add column if not exists tags text[];
+add column if not exists tags text[],
+add column if not exists total_time_spent bigint default 0,
+add column if not exists timer_started_at timestamp with time zone;
 
 -- 2. Update existing policies if necessary (usually not needed if just adding columns)
 -- 3. You can run this in your Supabase SQL Editor.
