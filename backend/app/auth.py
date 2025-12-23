@@ -5,12 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from supabase import create_client, Client
 from typing import Optional
 
-print(f"📂 Backend CWD: {os.getcwd()}")
-env_path = os.path.join(os.getcwd(), '.env')
-print(f"📄 Checking for .env at: {env_path} (Exists: {os.path.exists(env_path)})")
-
-loaded = load_dotenv(env_path)
-print(f"🚀 load_dotenv result: {loaded}")
+load_dotenv()
 
 SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
