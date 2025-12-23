@@ -1,10 +1,10 @@
 import os
 import json
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, Any, Dict
-from app.auth import verify_jwt
+from app.auth import verify_jwt, supabase
 from .skills import skill_manager
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -152,7 +152,7 @@ async def call_tool_direct(request: Request, user_id: str = Depends(verify_jwt))
     arguments["user_id"] = user_id
     
     try:
-        from .agent import mcp # Ensure we use the same mcp instance
+        from app.mcp_server import mcp
         result = await mcp.call_tool(tool_name, arguments)
         return {"result": result}
     except Exception as e:
