@@ -98,6 +98,8 @@ async def dispatch_agent(
             message = f"زبردست! '{result.get('task')}' مکمل ہو گیا ہے۔ ✅"
         elif action == "delete":
             message = f"اوکے، میں نے '{result.get('task')}' آپ کی لسٹ سے حذف کر دیا ہے۔ 🗑️"
+        elif action == "list":
+            message = "Accessing the archives... یہ رہی آپ کی موجودہ لسٹ۔ 📋"
         else:
             message = "معذرت، میں سمجھ نہیں سکا۔ کیا آپ دوبارہ بتا سکتے ہیں؟ 🧠"
     else:
