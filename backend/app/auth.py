@@ -11,11 +11,12 @@ SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
 if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-    # We will log a warning but allow the server to start if possible, 
-    # though Supabase calls will fail.
-    print("⚠️ WARNING: SUPABASE_URL or SUPABASE_ANON_KEY not found in environment.")
+    print("❌ CRITICAL: Supabase Environment Variables are MISSING in the Backend.")
 
-supabase: Client = create_client(SUPABASE_URL or "https://placeholder.supabase.co", SUPABASE_ANON_KEY or "placeholder")
+supabase: Client = create_client(
+    SUPABASE_URL or "https://missing-backend-config.supabase.co", 
+    SUPABASE_ANON_KEY or "missing-key"
+)
 
 security = HTTPBearer(auto_error=False)
 
