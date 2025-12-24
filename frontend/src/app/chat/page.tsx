@@ -651,8 +651,8 @@ export default function ChatPage() {
                 </AnimatePresence>
             </div>
 
-            {/* Main Container - Full Width Task Board */}
-            <div className={cn("flex-1 flex overflow-hidden relative z-10 transition-all duration-500", sidebarOpen && "ml-80")}>
+            {/* Main Container - 2 Column Grid: Chat + Todo */}
+            <div className={cn("flex-1 grid grid-cols-[1fr_500px] overflow-hidden relative z-10 transition-all duration-500", sidebarOpen && "ml-80")}>
 
                 {/* Task Board - Full Width */}
                 <section className="flex-1 flex flex-col bg-[#1E293B]/40 backdrop-blur-3xl">
