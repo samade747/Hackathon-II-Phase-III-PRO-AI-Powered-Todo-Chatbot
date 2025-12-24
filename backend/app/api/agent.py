@@ -92,6 +92,11 @@ async def dispatch_agent(
         tool_res = await mcp.call_tool("manage_timer", {"task_id": item, "user_id": user_id, "action": action_timer})
         action = "timer"
         result = {"task": item, "timer_action": action_timer, "response": tool_res}
+    elif intent == "greeting":
+        # Respond to greetings by showing task list
+        tool_res = await mcp.call_tool("list_todos", {"user_id": user_id})
+        action = "greeting"
+        result = {"response": tool_res}
     else:
         action = "clarify"
         result = {}
@@ -108,6 +113,8 @@ async def dispatch_agent(
             message = f"اوکے، '{result.get('task')}' کے لیے کلاک {result.get('timer_action') == 'start' and 'شروع' or 'بند'} ہو گیا ہے۔ ⏱️"
         elif action == "list":
             message = "Accessing the archives... یہ رہی آپ کی موجودہ لسٹ۔ 📋"
+        elif action == "greeting":
+            message = "السلام علیکم! میں آپ کی خدمت میں حاضر ہوں۔ یہ رہے آپ کے اہداف۔ 🫡"
         else:
             message = "معذرت، میں سمجھ نہیں سکا۔ کیا آپ دوبارہ بتا سکتے ہیں؟ 🧠"
     else:
@@ -121,6 +128,8 @@ async def dispatch_agent(
             message = f"Mission clock {result.get('timer_action')}ed for '{result.get('task')}'. ⏱️"
         elif action == "list":
             message = "Accessing the archives... Here are your current objectives. 📋"
+        elif action == "greeting":
+            message = "Greetings, Commander! Ready to tackle your objectives. Here's your mission briefing. 🫡🇺🇸"
         else:
             message = "I'm not quite sure how to handle that objective. Could you rephrase it for AI Agentixz USA? 🧠"
 

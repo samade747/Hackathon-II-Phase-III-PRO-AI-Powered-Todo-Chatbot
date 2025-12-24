@@ -97,7 +97,12 @@ class SkillManager:
         if name == "intent_extractor":
             prompt = f"""
             Analyze the following user utterance and extract the intent and slots.
-            Intents: add_task, list_tasks, complete_task, delete_task, manage_timer, clarify.
+            Intents: add_task, list_tasks, complete_task, delete_task, manage_timer, greeting, clarify.
+            
+            - Use 'greeting' for: hi, hello, hey, greetings, what's up, etc.
+            - Use 'list_tasks' for: show tasks, what are my tasks, list todos, etc.
+            - Use 'add_task' for: add, create, new task, buy, remember to, etc.
+            
             Slots for 'add_task': item (title of the task), priority (urgent, high, medium, low), recurrence (daily, weekly, monthly, none).
             Slots for 'complete_task': item (title or ID of the task).
             Slots for 'delete_task': item (title or ID of the task).
@@ -116,7 +121,12 @@ class SkillManager:
                 return llm_res
 
             # --- FALLBACK KEYWORD LOGIC ---
-            u_low = utterance.lower()
+            u_low = utterance.lower().strip()
+            
+            # Handle greetings
+            if any(k in u_low for k in ["hi", "hello", "hey", "greetings", "what's up", "whats up", "sup"]):
+                return {"intent": "greeting", "slots": {}}
+            
             priority = "medium"
             if "urgent" in u_low or "asap" in u_low: priority = "urgent"
             elif "high" in u_low or "important" in u_low: priority = "high"
