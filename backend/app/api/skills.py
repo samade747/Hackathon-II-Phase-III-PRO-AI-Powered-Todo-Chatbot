@@ -95,6 +95,13 @@ class SkillManager:
         
         # --- WORLD-CLASS INTENT EXTRACTION ---
         if name == "intent_extractor":
+            # Quick check for simple greetings BEFORE calling expensive LLM
+            u_low = utterance.lower().strip()
+            simple_greetings = ["hi", "hello", "hey", "hola", "howdy", "sup", "yo"]
+            if u_low in simple_greetings or any(u_low.startswith(g + " ") or u_low.endswith(" " + g) for g in simple_greetings):
+                print(f"✅ Quick greeting detected: '{utterance}'")
+                return {"intent": "greeting", "slots": {}}
+            
             prompt = f"""
             Analyze the following user utterance and extract the intent and slots.
             Intents: add_task, list_tasks, complete_task, delete_task, manage_timer, greeting, clarify.
