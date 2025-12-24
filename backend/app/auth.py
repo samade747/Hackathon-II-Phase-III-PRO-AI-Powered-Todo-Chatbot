@@ -5,13 +5,23 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from supabase import create_client, Client
 from typing import Optional
 
-load_dotenv()
+# explicitly load .env from backend root
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.dirname(os.path.dirname(current_dir)) # app -> backend
+env_path = os.path.join(backend_dir, ".env")
+# fallback to local .env if searching up fails or just rely on standard load_dotenv behavior with override
+load_dotenv(env_path) if os.path.exists(env_path) else load_dotenv()
 
 SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
 if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-    print("❌ CRITICAL: Supabase Environment Variables are MISSING in the Backend.")
+    # Try alternate names just in case
+    SUPABASE_URL = SUPABASE_URL or os.getenv("SUPABASE_URL")
+    SUPABASE_ANON_KEY = SUPABASE_ANON_KEY or os.getenv("SUPABASE_ANON_KEY")
+
+if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    print(f"❌ CRITICAL: Supabase Environment Variables are MISSING in the Backend. Searched at {env_path}")
 else:
     print(f"✅ Backend initialized for Supabase: {SUPABASE_URL[:20]}...")
 
