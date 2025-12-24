@@ -750,6 +750,7 @@ export default function ChatPage() {
                         <AnimatePresence mode="popLayout">
                             {tasks
                                 .filter(t => viewMode === "active" ? t.status === "pending" : t.status === "completed")
+                                .filter(t => searchQuery === "" || t.title.toLowerCase().includes(searchQuery.toLowerCase()))
                                 .map((task) => (
                                     <motion.div
                                         key={task.id}
