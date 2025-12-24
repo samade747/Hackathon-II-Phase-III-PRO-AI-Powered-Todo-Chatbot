@@ -9,6 +9,10 @@ from .skills import skill_manager
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
+@router.get("/ping")
+async def ping():
+    return {"message": "Agent is online", "timestamp": datetime.now().isoformat()}
+
 class AgentRequest(BaseModel):
     utterance: str
     lang: Optional[str] = "en"
@@ -41,18 +45,22 @@ async def dispatch_agent(
     request: AgentRequest,
     user: dict = Depends(verify_jwt)
 ):
+    print(f"-------- DISPATCH AGENT CALL --------")
     utterance = request.utterance.strip()
+    print(f"User: {user['user_id']} | Utterance: {utterance}")
     user_id = user["user_id"]
     
     # 1. Translation / Language Detection
     trans_res = skill_manager.execute_skill("translator_urdu", {"utterance": utterance})
     working_utterance = trans_res.get("utterance_en", utterance)
     is_urdu = trans_res.get("detected_lang") == "ur"
+    print(f"Working Utterance (EN): {working_utterance} | Is Urdu: {is_urdu}")
     
     # 2. Intent Extraction
     intent_res = skill_manager.execute_skill("intent_extractor", {"utterance": working_utterance})
     intent = intent_res.get("intent")
     slots = intent_res.get("slots", {})
+    print(f"Detected Intent: {intent} | Slots: {slots}")
     
     # 3. Todo Orchestration via MCP
     from app.mcp_server import mcp
@@ -172,6 +180,7 @@ async def call_tool_direct(request: Request, user_id: str = Depends(verify_jwt))
     
     try:
         from app.mcp_server import mcp
+        print(f"Direct Tool Call: {tool_name} with args {arguments}")
         result = await mcp.call_tool(tool_name, arguments)
         return {"result": result}
     except Exception as e:
