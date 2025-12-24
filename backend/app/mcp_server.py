@@ -25,7 +25,7 @@ async def add_todo(
             "recurrence": recurrence,
             "tags": tags or []
         }).execute()
-        return f"Objective '{title}' deployed. 🚀"
+        return f"Objective '{title}' deployed."
     except Exception as e:
         return f"Deployment error: {str(e)}"
 
@@ -51,7 +51,7 @@ async def add_todos_bulk(
             return "No objectives found in the list."
             
         supabase.table("tasks").insert(data).execute()
-        return f"Bulk Deployment Complete: {len(data)} objectives synchronized. 🚀"
+        return f"Bulk Deployment Complete: {len(data)} objectives synchronized."
     except Exception as e:
         return f"Bulk deployment error: {str(e)}"
 
@@ -108,9 +108,9 @@ async def toggle_todo(task_id: str, user_id: str) -> str:
                 "due_date": next_due.isoformat(),
                 "status": "pending"
             }).execute()
-            return f"Status: {new_status}. Mission Respawned! 🚀"
+            return f"Status: {new_status}. Mission Respawned!"
 
-        return f"Status: {new_status}. Objective updated. ✅"
+        return f"Status: {new_status}. Objective updated."
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -157,9 +157,9 @@ async def complete_todo(task_id: str, user_id: str) -> str:
                 "tags": task.get("tags", []),
                 "status": "pending"
             }).execute()
-            return f"Mission Accomplished! '{task['title']}' completed. A new instance has been respawned for {next_due.strftime('%Y-%m-%d')}. 🚀"
+            return f"Mission Accomplished! '{task['title']}' completed. A new instance has been respawned for {next_due.strftime('%Y-%m-%d')}."
 
-        return f"Mission Accomplished! Objective '{task['title']}' is marked as completed. ✅"
+        return f"Mission Accomplished! Objective '{task['title']}' is marked as completed."
     except Exception as e:
         return f"Tactical Error during completion: {str(e)}"
 
@@ -170,7 +170,7 @@ async def delete_todo(task_id: str, user_id: str) -> str:
     """
     try:
         response = supabase.table("tasks").delete().eq("id", task_id).eq("user_id", user_id).execute()
-        return f"Objective {task_id} eliminated from the archives. 🗑️"
+        return f"Objective {task_id} eliminated from the archives."
     except Exception as e:
         return f"Error during elimination: {str(e)}"
 

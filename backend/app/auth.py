@@ -21,9 +21,9 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     SUPABASE_ANON_KEY = SUPABASE_ANON_KEY or os.getenv("SUPABASE_ANON_KEY")
 
 if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-    print(f"❌ CRITICAL: Supabase Environment Variables are MISSING in the Backend. Searched at {env_path}")
+    print(f"CRITICAL: Supabase Environment Variables are MISSING in the Backend. Searched at {env_path}")
 else:
-    print(f"✅ Backend initialized for Supabase: {SUPABASE_URL[:20]}...")
+    print(f"Backend initialized for Supabase: {SUPABASE_URL[:20]}...")
 
 supabase: Client = create_client(
     SUPABASE_URL or "https://missing-backend-config.supabase.co", 

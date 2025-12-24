@@ -27,9 +27,9 @@ class SkillManager:
         self._add_provider("GEMINI_API_KEY", None, "gemini-1.5-flash", "Gemini", "https://generativelanguage.googleapis.com/v1beta/openai")
 
         if not self.clients:
-            print("⚠️ SkillManager: All LLM keys missing. Falling back to keyword logic.")
+            print("SkillManager: All LLM keys missing. Falling back to keyword logic.")
         else:
-            print(f"🧠 SkillManager: World-Class Intelligence initialized with {len(self.clients)} brains.")
+            print(f"SkillManager: World-Class Intelligence initialized with {len(self.clients)} brains.")
 
     def _add_provider(self, env_key: str, base_env_key: Optional[str], model: str, name: str, default_base: Optional[str] = None):
         key = os.getenv(env_key)
@@ -38,9 +38,9 @@ class SkillManager:
             try:
                 client = OpenAI(api_key=key, base_url=base)
                 self.clients.append({"name": name, "client": client, "model": model})
-                print(f"✅ Brain Linked: {name}")
+                print(f"Brain Linked: {name}")
             except Exception as e:
-                print(f"⚠️ SkillManager: Failed to link {name}: {e}")
+                print(f"SkillManager: Failed to link {name}: {e}")
 
     def load_skills(self):
         if not self.skills_dir.exists():
@@ -65,7 +65,7 @@ class SkillManager:
             
         for provider in self.clients:
             try:
-                print(f"📡 Brain {provider['name']} attempting extraction...")
+                print(f"Brain {provider['name']} attempting extraction...")
                 response = provider['client'].chat.completions.create(
                     model=provider['model'],
                     messages=[
@@ -77,10 +77,10 @@ class SkillManager:
                 )
                 return json.loads(response.choices[0].message.content)
             except Exception as e:
-                print(f"⚠️ SkillManager: Brain {provider['name']} failed: {e}. Falling back...")
+                print(f"SkillManager: Brain {provider['name']} failed: {e}. Falling back...")
                 continue
         
-        print("❌ SkillManager: All brains failed to respond.")
+        print("SkillManager: All brains failed to respond.")
         return None
 
     def execute_skill(self, name: str, inputs: Dict[str, Any]) -> Dict[str, Any]:
@@ -99,7 +99,7 @@ class SkillManager:
             u_low = utterance.lower().strip()
             simple_greetings = ["hi", "hello", "hey", "hola", "howdy", "sup", "yo"]
             if u_low in simple_greetings or any(u_low.startswith(g + " ") or u_low.endswith(" " + g) for g in simple_greetings):
-                print(f"✅ Quick greeting detected: '{utterance}'")
+                print(f"Quick greeting detected: '{utterance}'")
                 return {"intent": "greeting", "slots": {}}
             
             prompt = f"""

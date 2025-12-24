@@ -135,21 +135,21 @@ async def dispatch_agent(
             message = "معذرت، میں سمجھ نہیں سکا۔ کیا آپ دوبارہ بتا سکتے ہیں؟ 🧠"
     else:
         if action == "create":
-            message = f"Got it! I've added '{result.get('task')}' to your list. Mission started! 🚀"
+            message = f"Got it! I've added '{result.get('task')}' to your list. Mission started!"
         elif action == "update":
-            message = f"Mission accomplished! '{result.get('task')}' is now marked as completed. ✅"
+            message = f"Mission accomplished! '{result.get('task')}' is now marked as completed."
         elif action == "delete":
-            message = f"Target eliminated! '{result.get('task')}' has been removed from your objectives. 🗑️"
+            message = f"Target eliminated! '{result.get('task')}' has been removed from your objectives."
         elif action == "timer":
-            message = f"Mission clock {result.get('timer_action')}ed for '{result.get('task')}'. ⏱️"
+            message = f"Mission clock {result.get('timer_action')}ed for '{result.get('task')}'."
         elif action == "list":
-            message = "Accessing the archives... Here are your current objectives. 📋"
+            message = "Accessing the archives... Here are your current objectives."
         elif action == "greeting":
-            message = "Greetings, Commander! Ready to tackle your objectives. Here's your mission briefing. 🫡🇺🇸"
+            message = "Greetings, Commander! Ready to tackle your objectives. Here's your mission briefing."
         elif action == "clarify_add_task":
-            message = "Roger that! What task would you like to add to your mission objectives? Please provide the details. 📝"
+            message = "Roger that! What task would you like to add to your mission objectives? Please provide the details."
         else:
-            message = "I'm not quite sure how to handle that objective. Could you rephrase it for AI Agentixz USA? 🧠"
+            message = "I'm not quite sure how to handle that objective. Could you rephrase it for AI Agentixz USA?"
 
     # 5. Save History
     save_interaction({
