@@ -198,23 +198,15 @@ export default function ChatPage() {
     const [user, setUser] = useState<any>(null);
     const [isPending, setIsPending] = useState(true);
     const router = useRouter();
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            role: "assistant",
-            content: "Welcome to AI Agentixz USA! I'm your elite AI operative. I can help you manage your objectives in English or Urdu. What's our first mission? 🇺🇸",
-            timestamp: new Date(2025, 0, 1),
-            id: "1"
-        }
-    ]);
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [input, setInput] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [viewMode, setViewMode] = useState<"active" | "history">("active");
     const [isAddingTask, setIsAddingTask] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState("");
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [newTaskPriority, setNewTaskPriority] = useState<Task['priority']>("medium");
+    const [newTaskRecurrence, setNewTaskRecurrence] = useState<Task['recurrence']>("none");
+    const [searchQuery, setSearchQuery] = useState("");
     const [toasts, setToasts] = useState<{ id: string; message: string; type: 'success' | 'error' | 'info' }[]>([]);
 
     const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -657,117 +649,100 @@ export default function ChatPage() {
                 </AnimatePresence>
             </div>
 
-            {/* Main Container */}
+            {/* Main Container - Full Width Task Board */}
             <div className={cn("flex-1 flex overflow-hidden relative z-10 transition-all duration-500", sidebarOpen && "ml-80")}>
 
-                {/* Chat Interface */}
-                <section className="flex-1 flex flex-col border-r border-white/5 bg-[#0F172A]/40 backdrop-blur-md">
+                {/* Task Board - Full Width */}
+                <section className="flex-1 flex flex-col bg-[#1E293B]/40 backdrop-blur-3xl">
                     <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02]">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-6">
                             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80">
                                 <Menu size={24} />
                             </button>
                             <h1 className="text-2xl font-black tracking-tighter text-white">
-                                AI AGENTIXZ <span className="text-indigo-500">USA</span>
+                                MISSION <span className="text-indigo-500">CONTROL</span>
                             </h1>
-                        </div>
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 hidden sm:block">Neural Active</span>
-                            </div>
-                            <div className="flex items-center gap-3 p-2 pr-4 rounded-2xl bg-white/5 border border-white/5">
-                                <div className="relative w-8 h-8">
-                                    <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-xs font-bold">
-                                        {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
-                                    </div>
-                                </div>
-                                <div className="hidden md:block">
-                                    <div className="text-[10px] font-black">{user?.user_metadata?.full_name || 'OPERATIVE'}</div>
-                                    <div className="text-[8px] text-indigo-400 font-bold uppercase tracking-widest">ACTIVE</div>
-                                </div>
+                            <div className="flex items-center gap-6 font-black text-xs tracking-widest ml-8">
+                                <button onClick={() => setViewMode("active")} className={cn(viewMode === "active" ? "text-indigo-400" : "text-slate-500 hover:text-white transition-colors uppercase")}>ACTIVE</button>
+                                <button onClick={() => setViewMode("history")} className={cn(viewMode === "history" ? "text-indigo-400" : "text-slate-500 hover:text-white transition-colors uppercase")}>HISTORY</button>
                             </div>
                         </div>
-                    </header>
-
-                    <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
-                        <AnimatePresence mode="popLayout">
-                            {messages.map((m) => (
-                                <motion.div
-                                    key={m.id}
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    className={cn("flex flex-col max-w-[85%]", m.role === "user" ? "ml-auto items-end" : "items-start")}
-                                >
-                                    <div className={cn(
-                                        "px-6 py-4 rounded-[2rem] text-sm font-medium shadow-2xl ring-1 ring-white/5",
-                                        m.role === "user" ? "bg-indigo-600 text-white rounded-br-none" : "bg-white/5 backdrop-blur-xl text-slate-200 rounded-bl-none border border-white/5"
-                                    )}>
-                                        <p>{m.content}</p>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                        {isLoading && (
-                            <div className="flex gap-2 p-4 bg-white/5 rounded-2xl w-fit animate-pulse">
-                                <div className="w-2 h-2 bg-indigo-400 rounded-full" />
-                                <div className="w-2 h-2 bg-indigo-400 rounded-full" />
-                                <div className="w-2 h-2 bg-indigo-400 rounded-full" />
-                            </div>
-                        )}
-                        <div ref={messagesEndRef} />
-                    </div>
-
-                    <div className="p-8">
-                        <div className="relative group max-w-3xl mx-auto">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[2rem] blur opacity-10 group-focus-within:opacity-25 transition duration-500" />
-                            <div className="relative flex items-center gap-4 bg-[#1E293B]/80 backdrop-blur-3xl p-2 rounded-[2rem] border border-white/10">
+                        <div className="flex items-center gap-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                                 <input
                                     type="text"
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyPress={(e) => e.key === "Enter" && sendMessage(input)}
-                                    placeholder="Task the AI operative..."
-                                    className="flex-1 bg-transparent border-none focus:ring-0 text-white px-6 py-3"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search objectives..."
+                                    className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                 />
-                                <VoiceControl onTranscript={handleTranscript} />
-                                <button onClick={() => sendMessage(input)} className="p-4 bg-indigo-500 text-white rounded-2xl hover:bg-indigo-600 shadow-lg shadow-indigo-500/20">
-                                    <Send size={20} />
-                                </button>
                             </div>
+                            <motion.button
+                                onClick={() => setIsAddingTask(!isAddingTask)}
+                                className={cn("flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
+                                    isAddingTask ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-white/5 hover:bg-white/10 text-white"
+                                )}
+                            >
+                                <Plus size={18} />
+                                New Task
+                            </motion.button>
                         </div>
-                    </div>
-                </section>
-
-                {/* Task Board */}
-                <section className="w-[450px] flex flex-col bg-[#1E293B]/40 backdrop-blur-3xl">
-                    <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02]">
-                        <div className="flex items-center gap-6 font-black text-xs tracking-widest">
-                            <button onClick={() => setViewMode("active")} className={cn(viewMode === "active" ? "text-indigo-400" : "text-slate-500 hover:text-white transition-colors uppercase")}>ACTIVE</button>
-                            <button onClick={() => setViewMode("history")} className={cn(viewMode === "history" ? "text-indigo-400" : "text-slate-500 hover:text-white transition-colors uppercase")}>HISTORY</button>
-                        </div>
-                        <motion.button onClick={() => setIsAddingTask(!isAddingTask)} className={cn("p-2 rounded-xl", isAddingTask ? "bg-indigo-500 text-white" : "bg-white/5 hover:bg-white/10")}>
-                            <Plus size={20} />
-                        </motion.button>
                     </header>
 
                     <div className="flex-1 overflow-y-auto p-8 space-y-4">
                         <AnimatePresence>
                             {isAddingTask && (
-                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-6 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-6 p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl space-y-4">
                                     <textarea
                                         autoFocus
                                         value={newTaskTitle}
                                         onChange={(e) => setNewTaskTitle(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter" && !e.shiftKey) {
-                                                e.preventDefault();
-                                                handleAddTask();
-                                            }
-                                        }}
-                                        placeholder="Add objectives (Enter to deploy, Shift+Enter for multiple)..."
-                                        className="w-full bg-transparent border-none focus:ring-0 text-white font-bold resize-none h-24"
+                                        placeholder="Task title (Shift+Enter for multiple tasks)..."
+                                        className="w-full bg-transparent border-none focus:ring-0 text-white font-bold resize-none h-20 placeholder:text-slate-500"
                                     />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Priority</label>
+                                            <select
+                                                value={newTaskPriority}
+                                                onChange={(e) => setNewTaskPriority(e.target.value as any)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            >
+                                                <option className="bg-[#1E293B]" value="low">LOW</option>
+                                                <option className="bg-[#1E293B]" value="medium">MEDIUM</option>
+                                                <option className="bg-[#1E293B]" value="high">HIGH</option>
+                                                <option className="bg-[#1E293B]" value="urgent">URGENT</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Recurrence</label>
+                                            <select
+                                                value={newTaskRecurrence}
+                                                onChange={(e) => setNewTaskRecurrence(e.target.value as any)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            >
+                                                <option className="bg-[#1E293B]" value="none">NONE</option>
+                                                <option className="bg-[#1E293B]" value="daily">DAILY</option>
+                                                <option className="bg-[#1E293B]" value="weekly">WEEKLY</option>
+                                                <option className="bg-[#1E293B]" value="monthly">MONTHLY</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 pt-2">
+                                        <button
+                                            onClick={() => handleAddTask(newTaskTitle, newTaskPriority, newTaskRecurrence)}
+                                            className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20"
+                                        >
+                                            Add Task
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsAddingTask(false); setNewTaskTitle(""); setNewTaskPriority("medium"); setNewTaskRecurrence("none"); }}
+                                            className="px-6 py-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
