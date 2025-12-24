@@ -131,8 +131,15 @@ class SkillManager:
             u_low = utterance.lower().strip()
             
             # Handle greetings
-            if any(k in u_low for k in ["hi", "hello", "hey", "greetings", "what's up", "whats up", "sup"]):
+            # Handle greetings and basic conversation
+            if any(k in u_low for k in ["hi", "hello", "hey", "greetings", "what's up", "whats up", "sup", "yo", "hola"]):
                 return {"intent": "greeting", "slots": {}}
+            
+            if u_low in ["yes", "yup", "yeah", "ok", "sure", "please"]:
+                return {"intent": "clarify_add_task", "slots": {}} # Correct flow would depend on context, but this avoids "clarify" loop
+                
+            if u_low in ["no", "nope", "nah", "cancel"]:
+                return {"intent": "greeting", "slots": {}} # Just reset
             
             priority = "medium"
             if "urgent" in u_low or "asap" in u_low: priority = "urgent"
@@ -148,8 +155,9 @@ class SkillManager:
                 item = utterance
                 
                 # Check for standalone commands like "add task", "new task", "create task"
-                standalone_commands = ["add task", "new task", "create task", "add a task", "create a task", "new todo", "add todo"]
-                if u_low.strip() in standalone_commands:
+                # Also handle "AI Agentixz USA add task"
+                standalone_commands = ["add task", "new task", "create task", "add a task", "create a task", "new todo", "add todo", "add"]
+                if any(u_low.endswith(cmd) for cmd in standalone_commands) or u_low in standalone_commands:
                     return {
                         "intent": "add_task",
                         "slots": {
@@ -169,7 +177,7 @@ class SkillManager:
                         break
                 
                 # Remove articles and task-related words
-                for word in ["a task", "task", "a todo", "todo", "a new", "the"]:
+                for word in ["a task", "task", "a todo", "todo", "a new", "the", "an objective", "objective"]:
                     item = item.replace(word, "").strip()
                 
                 # Remove priority and recurrence keywords
