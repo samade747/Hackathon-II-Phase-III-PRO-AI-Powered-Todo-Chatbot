@@ -193,7 +193,6 @@ export default function ChatPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-    const [viewMode, setViewMode] = useState<"active" | "history">("active");
     const [isAddingTask, setIsAddingTask] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const [newTaskPriority, setNewTaskPriority] = useState<Task['priority']>("medium");
@@ -652,12 +651,8 @@ export default function ChatPage() {
                                 <Menu size={24} />
                             </button>
                             <h1 className="text-2xl font-black tracking-tighter text-white">
-                                MISSION <span className="text-indigo-500">CONTROL</span>
+                                TODO <span className="text-indigo-500">APP</span>
                             </h1>
-                            <div className="flex items-center gap-6 font-black text-xs tracking-widest ml-8">
-                                <button onClick={() => setViewMode("active")} className={cn(viewMode === "active" ? "text-indigo-400" : "text-slate-500 hover:text-white transition-colors uppercase")}>ACTIVE</button>
-                                <button onClick={() => setViewMode("history")} className={cn(viewMode === "history" ? "text-indigo-400" : "text-slate-500 hover:text-white transition-colors uppercase")}>HISTORY</button>
-                            </div>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="relative">
@@ -741,7 +736,6 @@ export default function ChatPage() {
 
                         <AnimatePresence mode="popLayout">
                             {tasks
-                                .filter(t => viewMode === "active" ? t.status === "pending" : t.status === "completed")
                                 .filter(t => searchQuery === "" || t.title.toLowerCase().includes(searchQuery.toLowerCase()))
                                 .map((task) => (
                                     <motion.div
