@@ -139,17 +139,44 @@ class SkillManager:
 
             if any(k in u_low for k in ["buy", "add", "new", "create", "need", "remember"]):
                 item = utterance
+                
+                # Check for standalone commands like "add task", "new task", "create task"
+                standalone_commands = ["add task", "new task", "create task", "add a task", "create a task", "new todo", "add todo"]
+                if u_low.strip() in standalone_commands:
+                    return {
+                        "intent": "add_task",
+                        "slots": {
+                            "item": "",  # Empty item signals missing details
+                            "priority": priority,
+                            "recurrence": recurrence
+                        }
+                    }
+                
+                # Extract task name by removing command keywords
                 for k in ["add", "buy", "new", "create", "need", "remember"]:
                     if k in u_low:
-                        item = u_low.split(k)[-1].strip()
+                        # Split and get everything after the keyword
+                        parts = u_low.split(k, 1)
+                        if len(parts) > 1:
+                            item = parts[1].strip()
                         break
+                
+                # Remove articles and task-related words
+                for word in ["a task", "task", "a todo", "todo", "a new", "the"]:
+                    item = item.replace(word, "").strip()
+                
+                # Remove priority and recurrence keywords
                 for k in ["urgent", "high", "low", "daily", "weekly", "monthly", "every day", "every week"]:
                     item = item.replace(k, "").strip()
+                
+                # If item is empty or too generic after cleaning, mark as incomplete
+                if not item or item in ["task", "todo", "something", "it"]:
+                    item = ""
                 
                 return {
                     "intent": "add_task", 
                     "slots": {
-                        "item": item.capitalize(),
+                        "item": item.capitalize() if item else "",
                         "priority": priority,
                         "recurrence": recurrence
                     }

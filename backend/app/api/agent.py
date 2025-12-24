@@ -64,14 +64,20 @@ async def dispatch_agent(
         item = slots.get("item", "something")
         priority = slots.get("priority", "medium")
         recurrence = slots.get("recurrence", "none")
-        tool_res = await mcp.call_tool("add_todo", {
-            "title": item, 
-            "user_id": user_id,
-            "priority": priority,
-            "recurrence": recurrence
-        })
-        action = "create"
-        result = {"task": item, "priority": priority, "recurrence": recurrence, "response": tool_res}
+        
+        # Check if item is missing or too generic
+        if not item or item.lower() in ["something", "task", "todo", "it", ""]:
+            action = "clarify_add_task"
+            result = {"missing": "task_details", "priority": priority, "recurrence": recurrence}
+        else:
+            tool_res = await mcp.call_tool("add_todo", {
+                "title": item, 
+                "user_id": user_id,
+                "priority": priority,
+                "recurrence": recurrence
+            })
+            action = "create"
+            result = {"task": item, "priority": priority, "recurrence": recurrence, "response": tool_res}
     elif intent == "list_tasks":
         tool_res = await mcp.call_tool("list_todos", {"user_id": user_id})
         action = "list"
@@ -115,6 +121,8 @@ async def dispatch_agent(
             message = "Accessing the archives... یہ رہی آپ کی موجودہ لسٹ۔ 📋"
         elif action == "greeting":
             message = "السلام علیکم! میں آپ کی خدمت میں حاضر ہوں۔ یہ رہے آپ کے اہداف۔ 🫡"
+        elif action == "clarify_add_task":
+            message = "کون سا کام آپ شامل کرنا چاہتے ہیں؟ براہ کرم تفصیل بتائیں۔ 📝"
         else:
             message = "معذرت، میں سمجھ نہیں سکا۔ کیا آپ دوبارہ بتا سکتے ہیں؟ 🧠"
     else:
@@ -130,6 +138,8 @@ async def dispatch_agent(
             message = "Accessing the archives... Here are your current objectives. 📋"
         elif action == "greeting":
             message = "Greetings, Commander! Ready to tackle your objectives. Here's your mission briefing. 🫡🇺🇸"
+        elif action == "clarify_add_task":
+            message = "Roger that! What task would you like to add to your mission objectives? Please provide the details. 📝"
         else:
             message = "I'm not quite sure how to handle that objective. Could you rephrase it for AI Agentixz USA? 🧠"
 
