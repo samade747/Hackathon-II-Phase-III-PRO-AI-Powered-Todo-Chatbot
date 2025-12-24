@@ -1,21 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X, Settings, LogOut, Bell, Search, Repeat } from "lucide-react";
-import VoiceControl from "@/components/VoiceControl";
+import { Plus, Trash2, CheckCircle2, Menu, X, LogOut, Search, Repeat } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
-}
-
-interface Message {
-    role: "user" | "assistant";
-    content: string;
-    timestamp: Date;
-    id: string;
 }
 
 import { supabase } from "@/lib/supabase";
