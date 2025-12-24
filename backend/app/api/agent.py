@@ -158,7 +158,7 @@ async def dispatch_agent(
         message=message
     )
 
-@router.post("/agent/tool")
+@router.post("/tool")
 async def call_tool_direct(request: Request, user_id: str = Depends(verify_jwt)):
     """
     Directly call an MCP tool. Used for UI interactions (clicks) to ensure consistency.
@@ -177,7 +177,7 @@ async def call_tool_direct(request: Request, user_id: str = Depends(verify_jwt))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/agent/history")
+@router.get("/history")
 async def get_history(user_id: str = Depends(verify_jwt)):
     response = supabase.table("interactions").select("*").eq("user_id", user_id).order("created_at", { "ascending": False }).limit(20).execute()
     return response.data
