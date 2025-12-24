@@ -1,32 +1,46 @@
+-- AI Agentixz USA - Complete Database Schema
 -- Run this in your Supabase SQL Editor (https://app.supabase.com/project/_/sql)
 
--- 1. Create the tasks table
-create table if not exists tasks (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade,
-  title text not null,
+-- 1. Create the tasks table with all World-Class features
+CREATE TABLE IF NOT EXISTS tasks (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  title text NOT NULL,
   description text,
   due_date timestamp with time zone,
-  status text check (status in ('pending', 'completed')) default 'pending',
-  created_at timestamp with time zone default now()
+  status text CHECK (status IN ('pending', 'completed')) DEFAULT 'pending',
+  priority text DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+  recurrence text DEFAULT 'none' CHECK (recurrence IN ('none', 'daily', 'weekly', 'monthly')),
+  tags jsonb DEFAULT '[]'::jsonb,
+  total_time_spent integer DEFAULT 0,
+  timer_started_at timestamp with time zone,
+  last_completed_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now()
 );
 
--- 2. Enable Row Level Security (RLS)
-alter table tasks enable row level security;
+-- 2. Create indexes for optimal performance
+CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
+CREATE INDEX IF NOT EXISTS idx_tasks_recurrence ON tasks(recurrence);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+CREATE INDEX IF NOT EXISTS idx_tasks_user_status ON tasks(user_id, status);
 
--- 3. Create RLS Policies
-create policy "Users can view their own tasks"
-  on tasks for select
-  using (auth.uid() = user_id);
+-- 3. Enable Row Level Security (RLS)
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 
-create policy "Users can insert their own tasks"
-  on tasks for insert
-  with check (auth.uid() = user_id);
+-- 4. Create RLS Policies
+CREATE POLICY "Users can view their own tasks"
+  ON tasks FOR SELECT
+  USING (auth.uid() = user_id);
 
-create policy "Users can update their own tasks"
-  on tasks for update
-  using (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own tasks"
+  ON tasks FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
-create policy "Users can delete their own tasks"
-  on tasks for delete
-  using (auth.uid() = user_id);
+CREATE POLICY "Users can update their own tasks"
+  ON tasks FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own tasks"
+  ON tasks FOR DELETE
+  USING (auth.uid() = user_id);
