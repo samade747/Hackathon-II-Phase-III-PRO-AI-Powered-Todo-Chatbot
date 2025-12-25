@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(python:*)",
+      "Bash(dir:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

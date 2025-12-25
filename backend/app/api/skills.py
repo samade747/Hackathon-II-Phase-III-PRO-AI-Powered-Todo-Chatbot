@@ -88,8 +88,7 @@ class SkillManager:
         Executes a skill based on its YAML definition and inputs.
         """
         skill = self.get_skill(name)
-        if not skill:
-            return {"error": f"Skill '{name}' not found"}
+        # NOTE: We don't error out if skill YAML is missing, as we have hardcoded implementations below
 
         utterance = inputs.get("utterance", "").strip()
         
