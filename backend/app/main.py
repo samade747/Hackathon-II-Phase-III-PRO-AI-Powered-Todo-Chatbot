@@ -22,6 +22,6 @@ async def root():
 
 @app.on_event("startup")
 async def startup_event():
-    print("🚀 API Routes:")
+    print("API Routes:")
     for route in app.routes:
         print(f"   {route.path} [{route.methods}]")
