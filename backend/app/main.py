@@ -20,6 +20,10 @@ app.include_router(agent.router, prefix="/api")
 async def root():
     return {"message": "AI-Powered Todo Chatbot API is running"}
 
+@app.get("/test-direct")
+async def test_direct():
+    return {"message": "Direct endpoint works!", "routes_count": len(app.routes)}
+
 @app.on_event("startup")
 async def startup_event():
     print("API Routes:")
