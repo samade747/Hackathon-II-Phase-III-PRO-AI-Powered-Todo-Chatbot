@@ -241,65 +241,76 @@ export default function ChatPage() {
                 initial={false}
                 animate={{ x: sidebarOpen ? 0 : -300 }}
                 className={cn(
-                    "fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 z-50 lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl lg:shadow-none",
+                    "fixed inset-y-0 left-0 w-72 bg-white/80 backdrop-blur-xl border-r border-slate-200/60 z-50 lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl lg:shadow-none",
                     !sidebarOpen && "translate-x-[-100%] lg:translate-x-0"
                 )}
             >
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">A</div>
-                        <span className="font-bold text-slate-800 text-lg">Agentixz</span>
+                <div className="p-6 border-b border-slate-100/60 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center text-white font-bold shadow-indigo-200 shadow-md">A</div>
+                        <span className="font-bold text-slate-800 text-lg tracking-tight">Agentixz</span>
                     </div>
-                    <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+                    <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
-                <div className="p-4 flex-1 overflow-y-auto space-y-2">
+                <div className="p-4 flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                     <button
                         onClick={() => setMessages([])}
-                        className="w-full flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 mb-6"
+                        className="w-full flex items-center gap-3 px-4 py-3.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200/50 hover:shadow-indigo-200 mb-6 group"
                     >
-                        <Plus size={18} />
+                        <Plus size={20} className="group-hover:rotate-90 transition-transform" />
                         <span>New Chat</span>
                     </button>
 
-                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-4 mb-2">Recent Tasks</div>
+                    <div className="flex items-center justify-between px-2 mb-2">
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recent Tasks</div>
+                        <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">{tasks.length}</span>
+                    </div>
+
                     {tasks.length === 0 ? (
-                        <div className="px-4 py-3 text-sm text-slate-400 text-center italic">No pending tasks found</div>
+                        <div className="px-4 py-8 text-sm text-slate-400 text-center italic border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                            No pending tasks.<br />"Add task..." via voice!
+                        </div>
                     ) : (
                         tasks.map((task, i) => (
                             <button
                                 key={task.id || i}
                                 onClick={() => toggleTask(task.id)}
-                                className="w-full text-left px-4 py-4 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all text-sm truncate flex items-center gap-3 border border-transparent hover:border-slate-100"
+                                className="w-full text-left px-4 py-3.5 rounded-xl text-slate-600 hover:bg-white hover:text-slate-900 transition-all text-sm truncate flex items-start gap-3 border border-transparent hover:border-slate-100 hover:shadow-sm group"
                             >
-                                <CheckCircle2 size={18} className={cn("flex-shrink-0 transition-colors", task.status === 'completed' ? "text-green-500" : "text-slate-300 group-hover:text-slate-400")} />
+                                <CheckCircle2 size={18} className={cn("flex-shrink-0 transition-colors mt-0.5", task.status === 'completed' ? "text-emerald-500" : "text-slate-300 group-hover:text-indigo-400")} />
                                 <div className="flex-1 min-w-0">
-                                    <div className={cn("font-medium truncate transition-all", task.status === 'completed' && "line-through opacity-50")}>{task.title}</div>
-                                    <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
-                                        <span className={cn("capitalize", task.priority === 'urgent' ? "text-rose-500 font-bold" : task.priority === 'high' ? "text-orange-500" : "")}>{task.priority}</span>
-                                        {task.recurrence !== 'none' && <span>• {task.recurrence}</span>}
-                                        {task.due_date && (
-                                            <span className="text-indigo-500 font-medium">
-                                                • {new Date(task.due_date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        )}
+                                    <div className={cn("font-medium truncate transition-all", task.status === 'completed' && "line-through opacity-50 text-slate-400")}>{task.title}</div>
+                                    <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-2 mt-1">
+                                        <span className={cn("capitalize px-1.5 py-0.5 rounded-md bg-slate-50",
+                                            task.priority === 'urgent' ? "text-rose-600 bg-rose-50" :
+                                                task.priority === 'high' ? "text-orange-600 bg-orange-50" :
+                                                    "text-slate-500")}>
+                                            {task.priority}
+                                        </span>
+                                        {task.recurrence !== 'none' && <span className="text-indigo-500">• {task.recurrence}</span>}
                                     </div>
+                                    {task.due_date && (
+                                        <div className="text-[10px] text-indigo-500 font-medium mt-1 flex items-center gap-1">
+                                            <span>⏰ {new Date(task.due_date).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </button>
                         ))
                     )}
                 </div>
 
-                <div className="p-4 border-t border-slate-100">
-                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
-                        <div className="w-10 h-10 bg-gradient-to-tr from-slate-200 to-slate-300 rounded-full flex items-center justify-center text-slate-600 shadow-inner">
+                <div className="p-4 border-t border-slate-100/60 bg-white/50">
+                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer transition-all border border-transparent hover:border-slate-100">
+                        <div className="w-10 h-10 bg-gradient-to-tr from-slate-200 to-slate-300 rounded-full flex items-center justify-center text-slate-600 shadow-inner ring-2 ring-white">
                             <User size={20} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-slate-800 truncate">John Doe</div>
-                            <div className="text-xs text-slate-500 truncate">Premium Plan</div>
+                            <div className="text-sm font-bold text-slate-800 truncate">John Doe</div>
+                            <div className="text-xs text-slate-500 truncate font-medium">Pro Member</div>
                         </div>
                         <MoreVertical size={16} className="text-slate-400" />
                     </div>
