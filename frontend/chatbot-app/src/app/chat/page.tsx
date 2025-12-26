@@ -473,6 +473,15 @@ export default function ChatPage() {
                         </div>
 
                         <div className="flex items-center gap-1.5 lg:gap-2 pr-1.5 lg:pr-2">
+                            {/* Quick Add Button for Main Area */}
+                            <button
+                                onClick={() => setTaskModalOpen(true)}
+                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+                                title="Create Structured Task"
+                            >
+                                <Plus size={20} />
+                            </button>
+
                             <VoiceControl onTranscript={handleTranscript} />
 
                             <motion.button

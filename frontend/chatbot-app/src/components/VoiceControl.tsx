@@ -46,8 +46,9 @@ export default function VoiceControl({ onTranscript }: { onTranscript: (t: strin
             onClick={toggleListening}
             className={cn(
                 "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg",
+                // Show always, but style differently if not supported
                 !browserSupportsSpeechRecognition
-                    ? "bg-slate-100 text-slate-300 cursor-not-allowed opacity-60 shadow-none"
+                    ? "bg-slate-50 text-slate-300" // Removed cursor-not-allowed to ensure visibility
                     : listening
                         ? "bg-rose-500 text-white shadow-rose-200 animate-pulse"
                         : "bg-slate-100 text-slate-500 hover:bg-slate-200 shadow-slate-100"
