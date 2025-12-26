@@ -1,6 +1,6 @@
 from datetime import datetime
 from mcp.server.fastmcp import FastMCP
-from app.auth import supabase
+from app.auth import supabase_admin as supabase
 import logging
 
 # Initialize FastMCP server

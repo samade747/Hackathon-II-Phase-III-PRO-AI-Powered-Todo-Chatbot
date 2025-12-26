@@ -419,6 +419,41 @@
       "action": "clarify",
       "agent_response": "I'm not quite sure how to handle that objective. Could you rephrase it for AI Agentixz USA? \ud83e\udde0",
       "timestamp": "2025-12-25T14:14:53.029552"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "hi",
+      "action": "greeting",
+      "agent_response": "Greetings, Commander! Ready to tackle your objectives. Here's your mission briefing.",
+      "timestamp": "2025-12-26T10:21:47.460990"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "add task update the ads",
+      "action": "create",
+      "agent_response": "Got it! I've added 'update the ads' to your list. Mission started!",
+      "timestamp": "2025-12-26T10:22:12.560251"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "todo app not showing the added task",
+      "action": "clarify",
+      "agent_response": "I'm not quite sure how to handle that objective. Could you rephrase it for AI Agentixz USA?",
+      "timestamp": "2025-12-26T10:23:00.971452"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "hi  add task buy milk",
+      "action": "greeting",
+      "agent_response": "Greetings, Commander! Ready to tackle your objectives. Here's your mission briefing.",
+      "timestamp": "2025-12-26T10:23:45.222719"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "add task buy milk",
+      "action": "create",
+      "agent_response": "Got it! I've added 'buy milk' to your list. Mission started!",
+      "timestamp": "2025-12-26T10:24:04.295055"
     }
   ]
 }

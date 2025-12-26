@@ -30,6 +30,13 @@ supabase: Client = create_client(
     SUPABASE_ANON_KEY or "missing-key"
 )
 
+# Initialize Admin Client for Backend Operations (Bypasses RLS)
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase_admin: Client = create_client(
+    SUPABASE_URL or "https://missing-backend-config.supabase.co", 
+    SUPABASE_SERVICE_ROLE_KEY or "missing-service-key"
+)
+
 security = HTTPBearer(auto_error=False)
 
 async def verify_jwt(credentials: Optional[HTTPAuthorizationCredentials] = Security(security)):
