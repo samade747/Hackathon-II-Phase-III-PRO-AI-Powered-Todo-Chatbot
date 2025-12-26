@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X, Bell, Calendar, Clock } from "lucide-react";
+import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X, Bell, Calendar, Clock, Flag, Repeat } from "lucide-react";
 import dynamic from "next/dynamic";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -48,6 +48,8 @@ export default function ChatPage() {
     const [taskModalOpen, setTaskModalOpen] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const [newTaskDate, setNewTaskDate] = useState("");
+    const [newTaskPriority, setNewTaskPriority] = useState("medium");
+    const [newTaskRecurrence, setNewTaskRecurrence] = useState("none");
 
     // Initialize Audio
     useEffect(() => {
@@ -73,14 +75,19 @@ export default function ChatPage() {
         if (!newTaskTitle.trim()) return;
 
         let command = `Add task ${newTaskTitle}`;
-        if (newTaskDate) {
-            command += ` due ${newTaskDate}`; // ISO string or natural language
-        }
+        // Explicitly add priority and recurrence to the natural language command
+        if (newTaskPriority !== "medium") command += ` priority ${newTaskPriority}`;
+        if (newTaskRecurrence !== "none") command += ` recurrence ${newTaskRecurrence}`;
+        if (newTaskDate) command += ` due ${newTaskDate}`;
 
         sendMessage(command);
+
+        // Reset Form
         setTaskModalOpen(false);
         setNewTaskTitle("");
         setNewTaskDate("");
+        setNewTaskPriority("medium");
+        setNewTaskRecurrence("none");
     };
 
     const scrollToBottom = () => {
@@ -537,16 +544,17 @@ export default function ChatPage() {
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0.9, opacity: 0 }}
-                                className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md overflow-hidden"
+                                className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-none"
                             >
                                 <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                                     <Plus className="bg-indigo-100 text-indigo-600 p-1 rounded-lg" size={28} />
                                     New Task
                                 </h2>
 
-                                <div className="space-y-4">
+                                <div className="space-y-6">
+                                    {/* Title */}
                                     <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">What needs to be done?</label>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">What needs to be done?</label>
                                         <input
                                             autoFocus
                                             value={newTaskTitle}
@@ -556,16 +564,68 @@ export default function ChatPage() {
                                         />
                                     </div>
 
+                                    {/* Priority */}
                                     <div>
                                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1">
-                                            <Clock size={12} /> Timer Options
+                                            <Flag size={12} /> Priority
                                         </label>
                                         <div className="flex flex-wrap gap-2">
+                                            {['low', 'medium', 'high', 'urgent'].map((p) => (
+                                                <button
+                                                    key={p}
+                                                    onClick={() => setNewTaskPriority(p)}
+                                                    className={cn(
+                                                        "px-3 py-1.5 border rounded-lg text-xs font-semibold capitalize transition-all",
+                                                        newTaskPriority === p
+                                                            ? (p === 'urgent' ? "bg-rose-100 text-rose-700 border-rose-200" :
+                                                                p === 'high' ? "bg-orange-100 text-orange-700 border-orange-200" :
+                                                                    p === 'medium' ? "bg-blue-100 text-blue-700 border-blue-200" :
+                                                                        "bg-slate-100 text-slate-700 border-slate-200")
+                                                            : "bg-white text-slate-500 border-slate-100 hover:bg-slate-50"
+                                                    )}
+                                                >
+                                                    {p}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Recurrence */}
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1">
+                                            <Repeat size={12} /> Recurrence
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['none', 'daily', 'weekly', 'monthly'].map((r) => (
+                                                <button
+                                                    key={r}
+                                                    onClick={() => setNewTaskRecurrence(r)}
+                                                    className={cn(
+                                                        "px-3 py-1.5 border rounded-lg text-xs font-semibold capitalize transition-all",
+                                                        newTaskRecurrence === r
+                                                            ? "bg-indigo-100 text-indigo-700 border-indigo-200"
+                                                            : "bg-white text-slate-500 border-slate-100 hover:bg-slate-50"
+                                                    )}
+                                                >
+                                                    {r}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Timer/Date */}
+                                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block flex items-center gap-1">
+                                            <Clock size={12} /> Due Date & Time
+                                        </label>
+
+                                        {/* Chips */}
+                                        <div className="flex flex-wrap gap-2 mb-4">
                                             {[
                                                 { label: '+15m', val: 15 },
                                                 { label: '+30m', val: 30 },
                                                 { label: '+1h', val: 60 },
-                                                { label: 'Tmrw', val: 1440 } // Approx
+                                                { label: 'Tmrw', val: 1440 }
                                             ].map((opt) => (
                                                 <button
                                                     key={opt.label}
@@ -573,25 +633,22 @@ export default function ChatPage() {
                                                         const d = new Date(new Date().getTime() + opt.val * 60000);
                                                         setNewTaskDate(d.toISOString());
                                                     }}
-                                                    className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 transition-all active:scale-95"
+                                                    className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200/60 rounded-lg text-xs font-semibold text-slate-600 transition-all active:scale-95 shadow-sm"
                                                 >
                                                     {opt.label}
                                                 </button>
                                             ))}
                                         </div>
-                                    </div>
 
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1">
-                                            <Calendar size={12} /> Specific Date
-                                        </label>
+                                        {/* Picker */}
                                         <input
                                             type="datetime-local"
-                                            className="w-full p-2 bg-slate-50 rounded-xl text-sm font-medium text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100"
+                                            value={newTaskDate ? new Date(newTaskDate).toISOString().slice(0, 16) : ""}
+                                            className="w-full p-2.5 bg-white rounded-xl text-sm font-medium text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100 border border-slate-200/60"
                                             onChange={(e) => setNewTaskDate(new Date(e.target.value).toISOString())}
                                         />
                                         {newTaskDate && (
-                                            <div className="mt-2 text-xs text-indigo-600 font-medium">
+                                            <div className="mt-2 text-[11px] text-indigo-600 font-medium text-right">
                                                 Selected: {new Date(newTaskDate).toLocaleString()}
                                             </div>
                                         )}
