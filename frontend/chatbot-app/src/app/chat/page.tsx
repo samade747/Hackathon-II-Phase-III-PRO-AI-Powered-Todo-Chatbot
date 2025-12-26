@@ -116,7 +116,34 @@ export default function ChatPage() {
     useEffect(() => {
         fetchHistory();
         fetchTasks();
-    }, []);
+
+        // Request Notification Permission
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+
+        // Alarm Check Interval
+        const interval = setInterval(() => {
+            const now = new Date();
+            tasks.forEach(task => {
+                if (task.due_date && task.status === 'pending') {
+                    const due = new Date(task.due_date);
+                    // Check if due time is within the last minute (to avoid spamming)
+                    const diff = now.getTime() - due.getTime();
+                    if (diff >= 0 && diff < 60000) { // If due within last 60s
+                        if (Notification.permission === "granted") {
+                            new Notification(`Task Due: ${task.title}`, {
+                                body: `It's time for: ${task.title}`,
+                                icon: "/icon.png" // Optional
+                            });
+                        }
+                    }
+                }
+            });
+        }, 30000); // Check every 30s
+
+        return () => clearInterval(interval);
+    }, [tasks]);
 
     const toggleTask = async (taskId: string) => {
         try {
@@ -253,6 +280,11 @@ export default function ChatPage() {
                                     <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
                                         <span className={cn("capitalize", task.priority === 'urgent' ? "text-rose-500 font-bold" : task.priority === 'high' ? "text-orange-500" : "")}>{task.priority}</span>
                                         {task.recurrence !== 'none' && <span>• {task.recurrence}</span>}
+                                        {task.due_date && (
+                                            <span className="text-indigo-500 font-medium">
+                                                • {new Date(task.due_date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </button>
@@ -348,9 +380,9 @@ export default function ChatPage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-6 lg:p-10 bg-white border-t border-slate-100">
-                    <div className="max-w-4xl mx-auto flex items-center gap-4 bg-slate-50 p-2 rounded-[24px] border border-slate-200/50 shadow-inner focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100/50 focus-within:border-indigo-200 transition-all">
-                        <div className="flex-1 flex items-center px-4">
+                <div className="p-4 lg:p-10 bg-white border-t border-slate-100">
+                    <div className="max-w-4xl mx-auto flex items-center gap-2 lg:gap-4 bg-slate-50 p-2 rounded-[24px] border border-slate-200/50 shadow-inner focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100/50 focus-within:border-indigo-200 transition-all">
+                        <div className="flex-1 flex items-center px-2 lg:px-4">
                             <input
                                 type="text"
                                 value={input}
@@ -362,7 +394,7 @@ export default function ChatPage() {
                             />
                         </div>
 
-                        <div className="flex items-center gap-2 pr-2">
+                        <div className="flex items-center gap-1.5 lg:gap-2 pr-1.5 lg:pr-2">
                             <VoiceControl onTranscript={handleTranscript} />
 
                             <motion.button

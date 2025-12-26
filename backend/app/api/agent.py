@@ -25,18 +25,12 @@ class AgentResponse(BaseModel):
 
 def save_interaction(interaction_data: Dict[str, Any]):
     try:
-        history_path = "history/interactions.json"
-        os.makedirs(os.path.dirname(history_path), exist_ok=True)
-        
-        data = {"history": []}
-        if os.path.exists(history_path):
-            with open(history_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        
-        data["history"].append(interaction_data)
-        
-        with open(history_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        from app.auth import supabase_admin
+        # Ensure timestamp is set
+        if "timestamp" not in interaction_data:
+            interaction_data["timestamp"] = datetime.now().isoformat()
+            
+        supabase_admin.table("interactions").insert(interaction_data).execute()
     except Exception as e:
         print(f"Error saving history: {e}")
 
@@ -78,11 +72,13 @@ async def dispatch_agent(
             action = "clarify_add_task"
             result = {"missing": "task_details", "priority": priority, "recurrence": recurrence}
         else:
+            due_date = slots.get("due_date", None)
             tool_res = await mcp.call_tool("add_todo", {
                 "title": item, 
                 "user_id": user_id,
                 "priority": priority,
-                "recurrence": recurrence
+                "recurrence": recurrence,
+                "due_date": due_date
             })
             action = "create"
             result = {"task": item, "priority": priority, "recurrence": recurrence, "response": tool_res}

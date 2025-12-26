@@ -24,11 +24,8 @@ export default function VoiceControl({ onTranscript }: { onTranscript: (t: strin
         }
     }, [listening, transcript, onTranscript, resetTranscript]);
 
-    if (!browserSupportsSpeechRecognition) {
-        return null; // Or return a disabled button with tooltip
-    }
-
     const toggleListening = () => {
+        if (!browserSupportsSpeechRecognition) return;
         if (listening) {
             SpeechRecognition.stopListening();
         } else {
@@ -38,16 +35,18 @@ export default function VoiceControl({ onTranscript }: { onTranscript: (t: strin
 
     return (
         <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={browserSupportsSpeechRecognition ? { scale: 1.05 } : {}}
+            whileTap={browserSupportsSpeechRecognition ? { scale: 0.95 } : {}}
             onClick={toggleListening}
             className={cn(
                 "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg",
-                listening
-                    ? "bg-rose-500 text-white shadow-rose-200 animate-pulse"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 shadow-slate-100"
+                !browserSupportsSpeechRecognition
+                    ? "bg-slate-100 text-slate-300 cursor-not-allowed opacity-60 shadow-none"
+                    : listening
+                        ? "bg-rose-500 text-white shadow-rose-200 animate-pulse"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200 shadow-slate-100"
             )}
-            title={listening ? "Stop Listening" : "Start Voice Command"}
+            title={!browserSupportsSpeechRecognition ? "Voice input not supported in this browser" : listening ? "Stop Listening" : "Start Voice Command"}
         >
             {listening ? (
                 <div className="flex gap-1">

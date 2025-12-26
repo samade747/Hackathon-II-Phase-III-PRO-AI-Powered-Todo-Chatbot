@@ -517,6 +517,20 @@
       "action": "create",
       "agent_response": "Got it! I've added 'ads update' to your list. Mission started!",
       "timestamp": "2025-12-26T12:04:18.977312"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "hi",
+      "action": "greeting",
+      "agent_response": "Greetings, Commander! Ready to tackle your objectives. Here's your mission briefing.",
+      "timestamp": "2025-12-26T12:15:21.515823"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "add task working on ads creative",
+      "action": "create",
+      "agent_response": "Got it! I've added 'working on ads creative' to your list. Mission started!",
+      "timestamp": "2025-12-26T12:16:02.213940"
     }
   ]
 }

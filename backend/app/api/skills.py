@@ -4,6 +4,7 @@ import json
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 from openai import OpenAI
+from datetime import datetime
 
 class SkillManager:
     def __init__(self, skills_dir: str = "skills"):
@@ -109,7 +110,12 @@ class SkillManager:
             - Use 'list_tasks' for: show tasks, what are my tasks, list todos, etc.
             - Use 'add_task' for: add, create, new task, buy, remember to, etc.
             
-            Slots for 'add_task': item (title of the task), priority (urgent, high, medium, low), recurrence (daily, weekly, monthly, none).
+            Slots for 'add_task': 
+            - item (title of the task)
+            - priority (urgent, high, medium, low)
+            - recurrence (daily, weekly, monthly, none)
+            - due_date (ISO 8601 string if a specific time/date is mentioned, e.g., "at 5pm" -> "2025-12-26T17:00:00", "tomorrow" -> "2025-12-27T09:00:00". Assume today is {datetime.now().isoformat()}).
+            
             Slots for 'complete_task': item (title or ID of the task).
             Slots for 'delete_task': item (title or ID of the task).
             Slots for 'manage_timer': item (title or ID of the task), timer_action (start, stop).

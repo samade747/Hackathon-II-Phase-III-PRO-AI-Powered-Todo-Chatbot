@@ -12,20 +12,29 @@ async def add_todo(
     user_id: str, 
     priority: str = "medium", 
     recurrence: str = "none", 
+    due_date: str = None,
     tags: list = None
 ) -> str:
     """
     Add a new todo task.
     """
     try:
-        supabase.table("tasks").insert({
+        data = {
             "title": title,
             "user_id": user_id,
             "priority": priority,
             "recurrence": recurrence,
             "tags": tags or []
-        }).execute()
-        return f"Objective '{title}' deployed."
+        }
+        if due_date:
+            data["due_date"] = due_date
+            
+        supabase.table("tasks").insert(data).execute()
+        
+        msg = f"Objective '{title}' deployed."
+        if due_date:
+            msg += f" Due at: {due_date}"
+        return msg
     except Exception as e:
         return f"Deployment error: {str(e)}"
 
