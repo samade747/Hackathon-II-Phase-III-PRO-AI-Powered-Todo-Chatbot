@@ -45,13 +45,13 @@ export default function VoiceControl({ onTranscript }: { onTranscript: (t: strin
             whileTap={browserSupportsSpeechRecognition ? { scale: 0.95 } : {}}
             onClick={toggleListening}
             className={cn(
-                "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg",
+                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md",
                 // Show always, but style differently if not supported
                 !browserSupportsSpeechRecognition
-                    ? "bg-slate-50 text-slate-300" // Removed cursor-not-allowed to ensure visibility
+                    ? "bg-slate-100 text-slate-400 border border-slate-200 opacity-80"
                     : listening
-                        ? "bg-rose-500 text-white shadow-rose-200 animate-pulse"
-                        : "bg-slate-100 text-slate-500 hover:bg-slate-200 shadow-slate-100"
+                        ? "bg-rose-500 text-white shadow-rose-200 animate-pulse active:scale-95"
+                        : "bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50 hover:border-indigo-200 shadow-sm active:scale-95"
             )}
             title={!browserSupportsSpeechRecognition ? "Voice input not supported in this browser" : listening ? "Stop Listening" : "Start Voice Command"}
         >

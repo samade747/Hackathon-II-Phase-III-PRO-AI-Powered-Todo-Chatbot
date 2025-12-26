@@ -458,45 +458,71 @@ export default function ChatPage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 lg:p-10 bg-white border-t border-slate-100">
-                    <div className="max-w-4xl mx-auto flex items-center gap-2 lg:gap-4 bg-slate-50 p-2 rounded-[24px] border border-slate-200/50 shadow-inner focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100/50 focus-within:border-indigo-200 transition-all">
-                        <div className="flex-1 flex items-center px-2 lg:px-4">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyPress={(e) => e.key === "Enter" && sendMessage(input)}
-                                placeholder="What can I help you with today?"
-                                className="w-full bg-transparent border-none focus:ring-0 text-slate-700 placeholder-slate-400 py-3 text-[15px]"
-                                disabled={isLoading}
-                            />
-                        </div>
-
-                        <div className="flex items-center gap-1.5 lg:gap-2 pr-1.5 lg:pr-2">
-                            {/* Quick Add Button for Main Area */}
+                <div className="p-4 lg:p-8 bg-white border-t border-slate-100 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
+                    <div className="max-w-4xl mx-auto space-y-4">
+                        {/* Quick Action Chips */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none no-scrollbar">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1 flex-shrink-0">Quick Time:</span>
+                            {[
+                                { label: '+15m', cmd: ' in 15 minutes' },
+                                { label: '+1h', cmd: ' in 1 hour' },
+                                { label: 'Tmrw', cmd: ' tomorrow' },
+                                { label: '6pm', cmd: ' at 6pm' }
+                            ].map((chip) => (
+                                <button
+                                    key={chip.label}
+                                    onClick={() => setInput(prev => prev + chip.cmd)}
+                                    className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-[11px] font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all whitespace-nowrap active:scale-95 shadow-sm"
+                                >
+                                    {chip.label}
+                                </button>
+                            ))}
                             <button
                                 onClick={() => setTaskModalOpen(true)}
-                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
-                                title="Create Structured Task"
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 hover:bg-slate-200 transition-all whitespace-nowrap flex items-center gap-1 active:scale-95 shadow-sm"
                             >
-                                <Plus size={20} />
+                                <Calendar size={12} /> Custom
                             </button>
-
-                            <VoiceControl onTranscript={handleTranscript} />
-
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => sendMessage(input)}
-                                disabled={isLoading || !input.trim()}
-                                className="w-11 h-11 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all shadow-lg shadow-indigo-100"
-                            >
-                                <Send size={18} />
-                            </motion.button>
                         </div>
-                    </div>
-                    <div className="mt-4 text-center">
-                        <p className="text-[11px] text-slate-400 font-medium">Press Enter to send • Built with Agentixz Intelligence</p>
+
+                        <div className="flex items-center gap-2 lg:gap-4 bg-slate-50 p-2 rounded-[24px] border border-slate-200 shadow-inner focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-200 transition-all relative group">
+                            <div className="flex-1 flex items-center px-2 lg:px-4">
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === "Enter" && sendMessage(input)}
+                                    placeholder="Add task or ask a question..."
+                                    className="w-full bg-transparent border-none focus:ring-0 text-slate-700 placeholder-slate-400 py-4 text-[15px] font-medium"
+                                    disabled={isLoading}
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-1.5 lg:gap-2 pr-1.5 lg:pr-2">
+                                <button
+                                    onClick={() => setTaskModalOpen(true)}
+                                    className="p-3 bg-white text-indigo-600 border border-indigo-100 rounded-2xl transition-all shadow-sm hover:shadow-indigo-100 hover:bg-indigo-50 active:scale-95 group-hover:border-indigo-200"
+                                    title="Open Task Options"
+                                >
+                                    <Plus size={20} className="stroke-[3px]" />
+                                </button>
+
+                                <VoiceControl onTranscript={handleTranscript} />
+
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => sendMessage(input)}
+                                    disabled={isLoading || !input.trim()}
+                                    className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all shadow-lg shadow-indigo-200 active:scale-90"
+                                >
+                                    <Send size={20} />
+                                </motion.button>
+                            </div>
+                        </div>
+                        <div className="flex justify-center">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest opacity-60">Press Enter • Built with Agentixz Pro</p>
+                        </div>
                     </div>
                 </div>
 
