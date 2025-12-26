@@ -22,7 +22,7 @@ export default function ChatPage() {
         {
             role: "assistant",
             content: "Hi there! I'm your AI Task Assistant. I can help you manage your todos in English or Urdu. What's on your mind?",
-            timestamp: new Date(2025, 0, 1)
+            timestamp: new Date()
         }
     ]);
     const [input, setInput] = useState("");
@@ -51,16 +51,97 @@ export default function ChatPage() {
             });
             if (response.ok) {
                 const data = await response.json();
-                setTasks(data);
+                if (Array.isArray(data)) {
+                    setTasks(data);
+                } else {
+                    console.error("Tasks API returned non-array:", data);
+                    setTasks([]);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch tasks", error);
+            setTasks([]);
+        }
+    };
+
+    const fetchHistory = async () => {
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            const response = await fetch(`${apiUrl}/api/agent/history`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token") || ""}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    // Map backend history to frontend Message format
+                    // Backend: { utterance, agent_response, timestamp, ... }
+                    // We need to interleave them or just show them. 
+                    // Actually, the current history structure in backend/agent.py save_interaction is one row per turn.
+                    const historyMessages: Message[] = [];
+                    // Reverse to get chronological order if API returns newest first
+                    // The API currently orders by created_at DESC (newest first).
+                    const sortedData = [...data].reverse();
+
+                    sortedData.forEach((item: any) => {
+                        if (item.utterance) {
+                            historyMessages.push({
+                                role: "user",
+                                content: item.utterance,
+                                timestamp: new Date(item.timestamp || item.created_at)
+                            });
+                        }
+                        if (item.agent_response) {
+                            historyMessages.push({
+                                role: "assistant",
+                                content: item.agent_response,
+                                timestamp: new Date(item.timestamp || item.created_at) // Approximate timestamp
+                            });
+                        }
+                    });
+
+                    if (historyMessages.length > 0) {
+                        setMessages(historyMessages);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch history", error);
         }
     };
 
     useEffect(() => {
+        fetchHistory();
         fetchTasks();
     }, []);
+
+    const toggleTask = async (taskId: string) => {
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            // Optimistic update
+            setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: t.status === 'completed' ? 'pending' : 'completed' } : t));
+
+            await fetch(`${apiUrl}/api/agent/tool`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token") || ""}`
+                },
+                body: JSON.stringify({
+                    name: "toggle_todo",
+                    arguments: { task_id: taskId }
+                })
+            });
+            // Re-fetch to ensure sync
+            fetchTasks();
+        } catch (error) {
+            console.error("Failed to toggle task", error);
+            fetchTasks(); // Revert on error
+        }
+    };
 
     const sendMessage = async (text: string) => {
         if (!text.trim()) return;
@@ -148,7 +229,10 @@ export default function ChatPage() {
                 </div>
 
                 <div className="p-4 flex-1 overflow-y-auto space-y-2">
-                    <button className="w-full flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 mb-6">
+                    <button
+                        onClick={() => setMessages([])}
+                        className="w-full flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 mb-6"
+                    >
                         <Plus size={18} />
                         <span>New Chat</span>
                     </button>
@@ -158,10 +242,14 @@ export default function ChatPage() {
                         <div className="px-4 py-3 text-sm text-slate-400 text-center italic">No pending tasks found</div>
                     ) : (
                         tasks.map((task, i) => (
-                            <button key={task.id || i} className="w-full text-left px-4 py-4 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all text-sm truncate flex items-center gap-3 border border-transparent hover:border-slate-100">
-                                <CheckCircle2 size={18} className={cn("flex-shrink-0", task.status === 'completed' ? "text-green-500" : "text-slate-300")} />
+                            <button
+                                key={task.id || i}
+                                onClick={() => toggleTask(task.id)}
+                                className="w-full text-left px-4 py-4 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all text-sm truncate flex items-center gap-3 border border-transparent hover:border-slate-100"
+                            >
+                                <CheckCircle2 size={18} className={cn("flex-shrink-0 transition-colors", task.status === 'completed' ? "text-green-500" : "text-slate-300 group-hover:text-slate-400")} />
                                 <div className="flex-1 min-w-0">
-                                    <div className={cn("font-medium truncate", task.status === 'completed' && "line-through opacity-50")}>{task.title}</div>
+                                    <div className={cn("font-medium truncate transition-all", task.status === 'completed' && "line-through opacity-50")}>{task.title}</div>
                                     <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
                                         <span className={cn("capitalize", task.priority === 'urgent' ? "text-rose-500 font-bold" : task.priority === 'high' ? "text-orange-500" : "")}>{task.priority}</span>
                                         {task.recurrence !== 'none' && <span>• {task.recurrence}</span>}

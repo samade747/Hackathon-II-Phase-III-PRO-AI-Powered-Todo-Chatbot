@@ -201,6 +201,7 @@ async def call_tool_direct(request: Request, user_data: dict = Depends(verify_jw
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/history")
-async def get_history(user_id: str = Depends(verify_jwt)):
-    response = supabase.table("interactions").select("*").eq("user_id", user_id).order("created_at", { "ascending": False }).limit(20).execute()
+async def get_history(user_data: dict = Depends(verify_jwt)):
+    user_id = user_data["user_id"]
+    response = supabase.table("interactions").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(20).execute()
     return response.data
