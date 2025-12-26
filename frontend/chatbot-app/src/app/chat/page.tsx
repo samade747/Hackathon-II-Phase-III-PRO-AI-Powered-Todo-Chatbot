@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X, Bell } from "lucide-react";
+import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X, Bell, Calendar, Clock } from "lucide-react";
 import dynamic from "next/dynamic";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -44,6 +44,11 @@ export default function ChatPage() {
     const [activeAlarm, setActiveAlarm] = useState<any>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
+    // Task Modal State
+    const [taskModalOpen, setTaskModalOpen] = useState(false);
+    const [newTaskTitle, setNewTaskTitle] = useState("");
+    const [newTaskDate, setNewTaskDate] = useState("");
+
     // Initialize Audio
     useEffect(() => {
         audioRef.current = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
@@ -61,11 +66,21 @@ export default function ChatPage() {
     const snoozeAlarm = async () => {
         if (!activeAlarm) return;
         stopAlarm();
-
-        // Optimistic Update: +5 mins
-        // Note: For a real app we'd update backend. Here we simulate.
-        // We will dispatch a command to the agent to handle the math/persistence cleanly.
         sendMessage(`Remind me to ${activeAlarm.title} in 5 minutes`);
+    };
+
+    const handleCreateTask = () => {
+        if (!newTaskTitle.trim()) return;
+
+        let command = `Add task ${newTaskTitle}`;
+        if (newTaskDate) {
+            command += ` due ${newTaskDate}`; // ISO string or natural language
+        }
+
+        sendMessage(command);
+        setTaskModalOpen(false);
+        setNewTaskTitle("");
+        setNewTaskDate("");
     };
 
     const scrollToBottom = () => {
@@ -158,9 +173,7 @@ export default function ChatPage() {
                 if (task.due_date && task.status === 'pending') {
                     const due = new Date(task.due_date);
                     const diff = now.getTime() - due.getTime();
-                    // Trigger if due 
-                    // AND not already alerting for this specific instance
-                    // (Simple check: due in last 60s and we aren't already blocked on it)
+                    // Trigger if due within last 60s AND not active
                     if (diff >= 0 && diff < 60000 && (!activeAlarm || activeAlarm.id !== task.id)) {
                         setActiveAlarm(task);
                         if (audioRef.current) {
@@ -279,12 +292,19 @@ export default function ChatPage() {
                         <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center text-white font-bold shadow-indigo-200 shadow-md">A</div>
                         <span className="font-bold text-slate-800 text-lg tracking-tight">Agentixz</span>
                     </div>
-                    <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
-                        <X size={20} />
-                    </button>
+                    {/* Add Task Button (Mobile Close) */}
+                    <div className="flex items-center gap-1">
+                        <button onClick={() => setTaskModalOpen(true)} className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors shadow-sm">
+                            <Plus size={20} />
+                        </button>
+                        <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-4 flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                    {/* New Chat Button */}
                     <button
                         onClick={() => setMessages([])}
                         className="w-full flex items-center gap-3 px-4 py-3.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200/50 hover:shadow-indigo-200 mb-6 group"
@@ -499,6 +519,102 @@ export default function ChatPage() {
                                 </div>
                             </div>
                         </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Task Creation Modal */}
+                <AnimatePresence>
+                    {taskModalOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setTaskModalOpen(false)}
+                                className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md overflow-hidden"
+                            >
+                                <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                    <Plus className="bg-indigo-100 text-indigo-600 p-1 rounded-lg" size={28} />
+                                    New Task
+                                </h2>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">What needs to be done?</label>
+                                        <input
+                                            autoFocus
+                                            value={newTaskTitle}
+                                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                                            placeholder="e.g. Call Mom, Buy Milk..."
+                                            className="w-full text-lg font-medium border-b-2 border-slate-100 focus:border-indigo-500 outline-none py-2 transition-colors placeholder:text-slate-300"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1">
+                                            <Clock size={12} /> Timer Options
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {[
+                                                { label: '+15m', val: 15 },
+                                                { label: '+30m', val: 30 },
+                                                { label: '+1h', val: 60 },
+                                                { label: 'Tmrw', val: 1440 } // Approx
+                                            ].map((opt) => (
+                                                <button
+                                                    key={opt.label}
+                                                    onClick={() => {
+                                                        const d = new Date(new Date().getTime() + opt.val * 60000);
+                                                        setNewTaskDate(d.toISOString());
+                                                    }}
+                                                    className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 transition-all active:scale-95"
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1">
+                                            <Calendar size={12} /> Specific Date
+                                        </label>
+                                        <input
+                                            type="datetime-local"
+                                            className="w-full p-2 bg-slate-50 rounded-xl text-sm font-medium text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100"
+                                            onChange={(e) => setNewTaskDate(new Date(e.target.value).toISOString())}
+                                        />
+                                        {newTaskDate && (
+                                            <div className="mt-2 text-xs text-indigo-600 font-medium">
+                                                Selected: {new Date(newTaskDate).toLocaleString()}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 flex items-center gap-3">
+                                    <button
+                                        onClick={() => setTaskModalOpen(false)}
+                                        className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleCreateTask}
+                                        disabled={!newTaskTitle.trim()}
+                                        className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all"
+                                    >
+                                        Create Task
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
                     )}
                 </AnimatePresence>
             </main>
