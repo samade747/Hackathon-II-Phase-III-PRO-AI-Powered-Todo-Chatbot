@@ -19,6 +19,8 @@
     "next": "16.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-speech-recognition": "^4.0.1",
+    "regenerator-runtime": "^0.14.1",
     "sqlite3": "^5.1.7",
     "tailwind-merge": "^3.4.0"
   },
@@ -28,6 +30,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-speech-recognition": "^3.9.6",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.0",

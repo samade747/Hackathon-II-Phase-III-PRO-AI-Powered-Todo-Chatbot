@@ -454,6 +454,34 @@
       "action": "create",
       "agent_response": "Got it! I've added 'buy milk' to your list. Mission started!",
       "timestamp": "2025-12-26T10:24:04.295055"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "hi",
+      "action": "greeting",
+      "agent_response": "Greetings, Commander! Ready to tackle your objectives. Here's your mission briefing.",
+      "timestamp": "2025-12-26T10:41:25.949911"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "add task update fb ads",
+      "action": "create",
+      "agent_response": "Got it! I've added 'update fb ads' to your list. Mission started!",
+      "timestamp": "2025-12-26T10:41:48.060479"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "hi",
+      "action": "greeting",
+      "agent_response": "Greetings, Commander! Ready to tackle your objectives. Here's your mission briefing.",
+      "timestamp": "2025-12-26T10:44:49.241628"
+    },
+    {
+      "user_id": "6f92e201-1858-4783-bc56-fbc95246b3c1",
+      "utterance": "add task check fb ads",
+      "action": "create",
+      "agent_response": "Got it! I've added 'check fb ads' to your list. Mission started!",
+      "timestamp": "2025-12-26T10:45:14.298507"
     }
   ]
 }

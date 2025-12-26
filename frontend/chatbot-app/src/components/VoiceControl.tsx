@@ -1,44 +1,38 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Mic } from "lucide-react";
+import { Mic, MicOff } from "lucide-react";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import "regenerator-runtime/runtime";
 
 export default function VoiceControl({ onTranscript }: { onTranscript: (t: string) => void }) {
-    const [isListening, setIsListening] = useState(false);
-    const recognitionRef = useRef<any>(null);
+    const {
+        transcript,
+        listening,
+        resetTranscript,
+        browserSupportsSpeechRecognition
+    } = useSpeechRecognition();
+
+    // Auto-send or update parent when transcript changes could be tricky if continuous.
+    // Instead, we 'commit' the transcript when the user stops listening.
 
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            const Win = window as any;
-            const SpeechRecognition = Win.SpeechRecognition || Win.webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                recognitionRef.current = new SpeechRecognition();
-                recognitionRef.current.continuous = false;
-                recognitionRef.current.interimResults = false;
-                recognitionRef.current.lang = "en-US"; // Default, bot can detect Urdu in backend
-
-                recognitionRef.current.onresult = (event: any) => {
-                    const transcript = event.results[0][0].transcript;
-                    onTranscript(transcript);
-                    setIsListening(false);
-                };
-
-                recognitionRef.current.onerror = (event: any) => {
-                    console.error("Speech recognition error", event.error);
-                    setIsListening(false);
-                };
-            }
+        if (!listening && transcript) {
+            onTranscript(transcript);
+            resetTranscript();
         }
-    }, [onTranscript]);
+    }, [listening, transcript, onTranscript, resetTranscript]);
+
+    if (!browserSupportsSpeechRecognition) {
+        return null; // Or return a disabled button with tooltip
+    }
 
     const toggleListening = () => {
-        if (isListening) {
-            recognitionRef.current?.stop();
-            setIsListening(false);
+        if (listening) {
+            SpeechRecognition.stopListening();
         } else {
-            recognitionRef.current?.start();
-            setIsListening(true);
+            SpeechRecognition.startListening({ continuous: false, language: 'en-US' });
         }
     };
 
@@ -49,13 +43,13 @@ export default function VoiceControl({ onTranscript }: { onTranscript: (t: strin
             onClick={toggleListening}
             className={cn(
                 "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg",
-                isListening
+                listening
                     ? "bg-rose-500 text-white shadow-rose-200 animate-pulse"
                     : "bg-slate-100 text-slate-500 hover:bg-slate-200 shadow-slate-100"
             )}
-            title={isListening ? "Stop Listening" : "Start Voice Command"}
+            title={listening ? "Stop Listening" : "Start Voice Command"}
         >
-            {isListening ? (
+            {listening ? (
                 <div className="flex gap-1">
                     <motion.span
                         animate={{ height: [8, 16, 8] }}

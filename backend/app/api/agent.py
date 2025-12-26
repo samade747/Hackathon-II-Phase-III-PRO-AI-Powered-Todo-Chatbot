@@ -166,6 +166,18 @@ async def dispatch_agent(
         message=message
     )
 
+@router.get("/tasks")
+async def get_tasks(user_id: str = Depends(verify_jwt)):
+    """
+    Get raw task list for UI rendering.
+    """
+    try:
+        from app.auth import supabase_admin
+        response = supabase_admin.table("tasks").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(20).execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/tool")
 async def call_tool_direct(request: Request, user_id: str = Depends(verify_jwt)):
     """

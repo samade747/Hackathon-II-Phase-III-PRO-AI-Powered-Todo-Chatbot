@@ -29,6 +29,7 @@ export default function ChatPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [tasks, setTasks] = useState<any[]>([]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,6 +38,29 @@ export default function ChatPage() {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    const fetchTasks = async () => {
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            const response = await fetch(`${apiUrl}/api/agent/tasks`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token") || ""}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setTasks(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch tasks", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchTasks();
+    }, []);
 
     const sendMessage = async (text: string) => {
         if (!text.trim()) return;
@@ -65,6 +89,8 @@ export default function ChatPage() {
                     content: data.message,
                     timestamp: new Date()
                 }]);
+                // Refresh tasks after an action
+                fetchTasks();
             } else {
                 setMessages((prev) => [...prev, {
                     role: "assistant",
@@ -128,12 +154,22 @@ export default function ChatPage() {
                     </button>
 
                     <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-4 mb-2">Recent Tasks</div>
-                    {["Buy groceries", "Submit report", "Urdu translation"].map((task, i) => (
-                        <button key={i} className="w-full text-left px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-sm truncate flex items-center gap-3">
-                            <CheckCircle2 size={16} className="text-slate-300" />
-                            {task}
-                        </button>
-                    ))}
+                    {tasks.length === 0 ? (
+                        <div className="px-4 py-3 text-sm text-slate-400 text-center italic">No pending tasks found</div>
+                    ) : (
+                        tasks.map((task, i) => (
+                            <button key={task.id || i} className="w-full text-left px-4 py-4 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all text-sm truncate flex items-center gap-3 border border-transparent hover:border-slate-100">
+                                <CheckCircle2 size={18} className={cn("flex-shrink-0", task.status === 'completed' ? "text-green-500" : "text-slate-300")} />
+                                <div className="flex-1 min-w-0">
+                                    <div className={cn("font-medium truncate", task.status === 'completed' && "line-through opacity-50")}>{task.title}</div>
+                                    <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                        <span className={cn("capitalize", task.priority === 'urgent' ? "text-rose-500 font-bold" : task.priority === 'high' ? "text-orange-500" : "")}>{task.priority}</span>
+                                        {task.recurrence !== 'none' && <span>• {task.recurrence}</span>}
+                                    </div>
+                                </div>
+                            </button>
+                        ))
+                    )}
                 </div>
 
                 <div className="p-4 border-t border-slate-100">

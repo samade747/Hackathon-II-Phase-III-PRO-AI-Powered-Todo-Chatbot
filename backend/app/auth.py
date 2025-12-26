@@ -24,6 +24,11 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     print(f"CRITICAL: Supabase Environment Variables are MISSING in the Backend. Searched at {env_path}")
 else:
     print(f"Backend initialized for Supabase: {SUPABASE_URL[:20]}...")
+    srv_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    if srv_key:
+        print(f"Service Role Key loaded (Starts with: {srv_key[:10]})...")
+    else:
+        print("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is MISSING!")
 
 supabase: Client = create_client(
     SUPABASE_URL or "https://missing-backend-config.supabase.co", 
