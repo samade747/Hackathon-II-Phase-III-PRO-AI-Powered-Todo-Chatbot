@@ -12,6 +12,7 @@ function cn(...inputs: ClassValue[]) {
 
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import VoiceControl from "@/components/VoiceControl";
 
 const PriorityChart = ({ tasks }: { tasks: Task[] }) => {
     const activeTasks = tasks.filter(t => t.status === 'pending');
@@ -740,6 +741,7 @@ export default function ChatPage() {
                                 disabled={isLoading}
                                 className="flex-1 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
                             />
+                            <VoiceControl onTranscript={handleTranscript} />
                             <motion.button
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => sendMessage(input)}
