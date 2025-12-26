@@ -33,6 +33,11 @@ export default function ChatPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [tasks, setTasks] = useState<any[]>([]);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Speech Recognition Logic
     const {
