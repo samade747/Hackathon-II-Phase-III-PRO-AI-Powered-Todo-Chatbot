@@ -102,23 +102,28 @@ class SkillManager:
                 print(f"Quick greeting detected: '{utterance}'")
                 return {"intent": "greeting", "slots": {}}
             
+            current_time = datetime.now().isoformat()
             prompt = f"""
             Analyze the following user utterance and extract the intent and slots.
-            Intents: add_task, list_tasks, complete_task, delete_task, manage_timer, greeting, clarify.
             
-            - Use 'greeting' for: hi, hello, hey, greetings, what's up, etc.
-            - Use 'list_tasks' for: show tasks, what are my tasks, list todos, etc.
-            - Use 'add_task' for: add, create, new task, buy, remember to, etc.
+            Current Time: {current_time}
+            
+            Intents: 
+            - add_task (add, create, new task, buy, remember to)
+            - list_tasks (show, list, what are my tasks)
+            - complete_task (done, finish, check)
+            - delete_task (delete, remove)
             
             Slots for 'add_task': 
-            - item (title of the task)
+            - item (title)
             - priority (urgent, high, medium, low)
             - recurrence (daily, weekly, monthly, none)
-            - due_date (ISO 8601 string if a specific time/date is mentioned, e.g., "at 5pm" -> "2025-12-26T17:00:00", "tomorrow" -> "2025-12-27T09:00:00". Assume today is {datetime.now().isoformat()}).
-            
-            Slots for 'complete_task': item (title or ID of the task).
-            Slots for 'delete_task': item (title or ID of the task).
-            Slots for 'manage_timer': item (title or ID of the task), timer_action (start, stop).
+            - due_date: CALCULATE the absolute ISO 8601 timestamp based on 'Current Time' if a relative or specific time is given.
+              Examples:
+              - "in 30 mins" -> Add 30 minutes to Current Time.
+              - "tomorrow at 5pm" -> Date of tomorrow + 17:00:00.
+              - "at 12:30" -> Today at 12:30.
+              - If no time mentioned, return null.
 
             Utterance: "{utterance}"
 

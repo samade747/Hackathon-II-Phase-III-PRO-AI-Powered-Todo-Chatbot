@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X } from "lucide-react";
+import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X, Bell } from "lucide-react";
 import dynamic from "next/dynamic";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -130,9 +130,16 @@ export default function ChatPage() {
                 if (task.due_date && task.status === 'pending') {
                     const due = new Date(task.due_date);
                     const diff = now.getTime() - due.getTime();
+                    // Alert if due within last 60s
                     if (diff >= 0 && diff < 60000) {
+                        // Play Beep
+                        try {
+                            const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+                            audio.play().catch(e => console.error("Audio play failed", e));
+                        } catch (e) { }
+
                         if (Notification.permission === "granted") {
-                            new Notification(`Task Due: ${task.title}`, {
+                            new Notification(`Alarm: ${task.title}`, {
                                 body: `It's time for: ${task.title}`,
                                 icon: "/icon.png"
                             });
@@ -290,8 +297,9 @@ export default function ChatPage() {
                                         {task.recurrence !== 'none' && <span className="text-indigo-500">• {task.recurrence}</span>}
                                     </div>
                                     {task.due_date && (
-                                        <div className="text-[10px] text-indigo-500 font-medium mt-1 flex items-center gap-1">
-                                            <span>⏰ {new Date(task.due_date).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                                        <div className="text-[10px] text-indigo-600 font-semibold mt-1 flex items-center gap-1.5 bg-indigo-50 px-2 py-1 rounded-md w-fit border border-indigo-100/50">
+                                            <Bell size={10} className="fill-indigo-600 animate-pulse-slow" />
+                                            <span>{new Date(task.due_date).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
                                         </div>
                                     )}
                                 </div>
