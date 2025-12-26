@@ -484,78 +484,79 @@ export default function ChatPage() {
                 <div className="p-4 lg:p-8 bg-white border-t border-slate-100 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
                     <div className="max-w-4xl mx-auto space-y-4">
                         {/* Quick Action Chips */}
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none no-scrollbar">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1 flex-shrink-0">Quick Time:</span>
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 flex-shrink-0">Quick Time:</span>
                             {[
                                 { label: '+15m', cmd: ' in 15 minutes' },
                                 { label: '+1h', cmd: ' in 1 hour' },
-                                { label: 'Tmrw', cmd: ' tomorrow' },
-                                { label: '6pm', cmd: ' at 6pm' }
+                                { label: 'Tmrw', cmd: ' tomorrow' }
                             ].map((chip) => (
                                 <button
                                     key={chip.label}
                                     onClick={() => setInput(prev => prev + chip.cmd)}
-                                    className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-[11px] font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all whitespace-nowrap active:scale-95 shadow-sm"
+                                    className="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl text-[11px] font-black text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all whitespace-nowrap active:scale-95 shadow-sm"
                                 >
                                     {chip.label}
                                 </button>
                             ))}
                         </div>
 
-                        <div className="flex items-center gap-2 lg:gap-4 bg-slate-50 p-2 rounded-[24px] border border-slate-200 shadow-inner focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-200 transition-all relative">
-                            <div className="flex-1 flex items-center px-2 lg:px-4">
+                        <div className="flex items-center gap-2 lg:gap-4 bg-slate-50 p-2 rounded-[28px] border border-slate-200 shadow-inner focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-200 transition-all relative">
+                            {/* NEW TASK BUTTON (Optional) */}
+                            <button
+                                onClick={() => setTaskModalOpen(true)}
+                                className="pl-4 pr-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                                title="Advanced Options"
+                            >
+                                <Plus size={24} className="stroke-[3px]" />
+                            </button>
+
+                            <div className="flex-1 min-w-0">
                                 <input
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyPress={(e) => e.key === "Enter" && sendMessage(input)}
-                                    placeholder="Add task or ask a question..."
-                                    className="w-full bg-transparent border-none focus:ring-0 text-slate-700 placeholder-slate-400 py-4 text-[15px] font-bold"
+                                    placeholder="Type a message..."
+                                    className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-400 py-4 text-[15px] font-bold"
                                     disabled={isLoading}
                                 />
                             </div>
 
-                            <div className="flex items-center gap-2 pr-2">
-                                <button
-                                    onClick={() => setTaskModalOpen(true)}
-                                    className="w-12 h-12 bg-white text-indigo-600 border-2 border-indigo-100 rounded-2xl transition-all shadow-sm hover:shadow-indigo-100 hover:bg-indigo-50 active:scale-90 flex items-center justify-center"
-                                    title="Advanced Options"
-                                >
-                                    <Plus size={24} className="stroke-[3px]" />
-                                </button>
-
-                                <button
-                                    onClick={toggleListening}
-                                    className={cn(
-                                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md border-2",
-                                        !browserSupportsSpeechRecognition
-                                            ? "bg-slate-100 text-slate-300 border-slate-200"
-                                            : listening
-                                                ? "bg-rose-500 text-white border-rose-600 animate-pulse active:scale-90"
+                            <div className="flex items-center gap-2 flex-shrink-0 pr-1">
+                                {/* VOICE BUTTON - Explicitly styled for visibility */}
+                                {mounted && (
+                                    <button
+                                        onClick={toggleListening}
+                                        className={cn(
+                                            "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md border-2",
+                                            listening
+                                                ? "bg-rose-500 text-white border-rose-600 animate-pulse"
                                                 : "bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700 active:scale-90"
-                                    )}
-                                    title="Voice Command"
-                                >
-                                    {listening ? (
-                                        <div className="flex gap-1 items-center h-4">
-                                            {[1, 2, 3].map(i => (
-                                                <motion.span
-                                                    key={i}
-                                                    animate={{ height: [4, 12, 4] }}
-                                                    transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                                                    className="w-1 bg-white rounded-full"
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : <Mic size={22} className="stroke-[2.5px]" />}
-                                </button>
+                                        )}
+                                        title="Voice Command"
+                                    >
+                                        {listening ? (
+                                            <div className="flex gap-1 items-center h-4">
+                                                {[1, 2, 3].map(i => (
+                                                    <motion.span
+                                                        key={i}
+                                                        animate={{ height: [4, 12, 4] }}
+                                                        transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
+                                                        className="w-1 bg-white rounded-full"
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : <Mic size={22} className="stroke-[2.5px]" />}
+                                    </button>
+                                )}
 
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => sendMessage(input)}
                                     disabled={isLoading || !input.trim()}
-                                    className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all shadow-lg active:scale-90"
+                                    className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg active:scale-90 shadow-indigo-100/50"
                                 >
                                     <Send size={22} className="stroke-[2.5px]" />
                                 </motion.button>
