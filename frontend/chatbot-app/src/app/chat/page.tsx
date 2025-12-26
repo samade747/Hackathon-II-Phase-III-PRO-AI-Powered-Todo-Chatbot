@@ -485,7 +485,7 @@ export default function ChatPage() {
                     <div className="max-w-4xl mx-auto space-y-4">
                         {/* Quick Action Chips */}
                         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 flex-shrink-0">Quick Time:</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1 flex-shrink-0">Quick Time:</span>
                             {[
                                 { label: '+15m', cmd: ' in 15 minutes' },
                                 { label: '+1h', cmd: ' in 1 hour' },
@@ -502,10 +502,10 @@ export default function ChatPage() {
                         </div>
 
                         <div className="flex items-center gap-2 lg:gap-4 bg-slate-50 p-2 rounded-[28px] border border-slate-200 shadow-inner focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-200 transition-all relative">
-                            {/* NEW TASK BUTTON (Optional) */}
+                            {/* ADVANCED MODAL BUTTON */}
                             <button
                                 onClick={() => setTaskModalOpen(true)}
-                                className="pl-4 pr-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                                className="pl-4 pr-1 text-slate-400 hover:text-indigo-600 transition-colors flex-shrink-0"
                                 title="Advanced Options"
                             >
                                 <Plus size={24} className="stroke-[3px]" />
@@ -518,38 +518,37 @@ export default function ChatPage() {
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyPress={(e) => e.key === "Enter" && sendMessage(input)}
                                     placeholder="Type a message..."
-                                    className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-400 py-4 text-[15px] font-bold"
+                                    className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder:text-slate-400 py-4 text-[15px] font-bold"
                                     disabled={isLoading}
                                 />
                             </div>
 
-                            <div className="flex items-center gap-2 flex-shrink-0 pr-1">
-                                {/* VOICE BUTTON - Explicitly styled for visibility */}
-                                {mounted && (
-                                    <button
-                                        onClick={toggleListening}
-                                        className={cn(
-                                            "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md border-2",
-                                            listening
-                                                ? "bg-rose-500 text-white border-rose-600 animate-pulse"
-                                                : "bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700 active:scale-90"
-                                        )}
-                                        title="Voice Command"
-                                    >
-                                        {listening ? (
-                                            <div className="flex gap-1 items-center h-4">
-                                                {[1, 2, 3].map(i => (
-                                                    <motion.span
-                                                        key={i}
-                                                        animate={{ height: [4, 12, 4] }}
-                                                        transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                                                        className="w-1 bg-white rounded-full"
-                                                    />
-                                                ))}
-                                            </div>
-                                        ) : <Mic size={22} className="stroke-[2.5px]" />}
-                                    </button>
-                                )}
+                            {/* BUTTON GROUP - FIXED WIDTH TO PREVENT HIDDEN BUTTONS */}
+                            <div className="flex items-center gap-2 flex-shrink-0 pr-1 w-fit min-w-[104px] justify-end">
+                                {/* VOICE BUTTON - Always Rendered, No Hydration Guard */}
+                                <button
+                                    onClick={toggleListening}
+                                    className={cn(
+                                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md border-2",
+                                        listening
+                                            ? "bg-rose-500 text-white border-rose-600 animate-pulse"
+                                            : "bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700 active:scale-90"
+                                    )}
+                                    title="Voice Command"
+                                >
+                                    {listening ? (
+                                        <div className="flex gap-1 items-center h-4">
+                                            {[1, 2, 3].map(i => (
+                                                <motion.span
+                                                    key={i}
+                                                    animate={{ height: [4, 12, 4] }}
+                                                    transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
+                                                    className="w-1 bg-white rounded-full"
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : <Mic size={22} className="stroke-[2.5px]" />}
+                                </button>
 
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
