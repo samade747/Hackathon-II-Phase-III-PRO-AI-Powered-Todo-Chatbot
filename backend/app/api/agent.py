@@ -167,11 +167,12 @@ async def dispatch_agent(
     )
 
 @router.get("/tasks")
-async def get_tasks(user_id: str = Depends(verify_jwt)):
+async def get_tasks(user_data: dict = Depends(verify_jwt)):
     """
     Get raw task list for UI rendering.
     """
     try:
+        user_id = user_data["user_id"]
         from app.auth import supabase_admin
         response = supabase_admin.table("tasks").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(20).execute()
         return response.data
@@ -179,7 +180,7 @@ async def get_tasks(user_id: str = Depends(verify_jwt)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/tool")
-async def call_tool_direct(request: Request, user_id: str = Depends(verify_jwt)):
+async def call_tool_direct(request: Request, user_data: dict = Depends(verify_jwt)):
     """
     Directly call an MCP tool. Used for UI interactions (clicks) to ensure consistency.
     """
@@ -188,7 +189,8 @@ async def call_tool_direct(request: Request, user_id: str = Depends(verify_jwt))
     arguments = body.get("arguments", {})
     
     # Force user_id for security
-    arguments["user_id"] = user_id
+    # user_data is {"user_id": "uuid"} from verify_jwt
+    arguments["user_id"] = user_data["user_id"]
     
     try:
         from app.mcp_server import mcp
