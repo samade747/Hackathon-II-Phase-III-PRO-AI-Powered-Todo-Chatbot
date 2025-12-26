@@ -63,9 +63,9 @@ async def dispatch_agent(
     result = {}
     
     if intent == "add_task" or intent == "create":
-        item = slots.get("item", "something")
-        priority = slots.get("priority", "medium")
-        recurrence = slots.get("recurrence", "none")
+        item = slots.get("item") or "something"
+        priority = slots.get("priority") or "medium"
+        recurrence = slots.get("recurrence") or "none"
         
         # Check if item is missing or too generic
         if not item or item.lower() in ["something", "task", "todo", "it", ""]:
