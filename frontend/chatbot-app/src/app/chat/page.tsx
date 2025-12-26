@@ -3,9 +3,18 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Mic, User, Bot, Plus, Trash2, CheckCircle2, MoreVertical, Menu, X } from "lucide-react";
-import VoiceControl from "@/components/VoiceControl";
+import dynamic from "next/dynamic";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+
+const VoiceControl = dynamic(() => import("@/components/VoiceControl"), {
+    ssr: false,
+    loading: () => (
+        <div className="w-11 h-11 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 shadow-sm">
+            <Mic size={20} />
+        </div>
+    )
+});
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -77,13 +86,7 @@ export default function ChatPage() {
             if (response.ok) {
                 const data = await response.json();
                 if (Array.isArray(data)) {
-                    // Map backend history to frontend Message format
-                    // Backend: { utterance, agent_response, timestamp, ... }
-                    // We need to interleave them or just show them. 
-                    // Actually, the current history structure in backend/agent.py save_interaction is one row per turn.
                     const historyMessages: Message[] = [];
-                    // Reverse to get chronological order if API returns newest first
-                    // The API currently orders by created_at DESC (newest first).
                     const sortedData = [...data].reverse();
 
                     sortedData.forEach((item: any) => {
@@ -98,7 +101,7 @@ export default function ChatPage() {
                             historyMessages.push({
                                 role: "assistant",
                                 content: item.agent_response,
-                                timestamp: new Date(item.timestamp || item.created_at) // Approximate timestamp
+                                timestamp: new Date(item.timestamp || item.created_at)
                             });
                         }
                     });
@@ -117,30 +120,27 @@ export default function ChatPage() {
         fetchHistory();
         fetchTasks();
 
-        // Request Notification Permission
         if ("Notification" in window) {
             Notification.requestPermission();
         }
 
-        // Alarm Check Interval
         const interval = setInterval(() => {
             const now = new Date();
             tasks.forEach(task => {
                 if (task.due_date && task.status === 'pending') {
                     const due = new Date(task.due_date);
-                    // Check if due time is within the last minute (to avoid spamming)
                     const diff = now.getTime() - due.getTime();
-                    if (diff >= 0 && diff < 60000) { // If due within last 60s
+                    if (diff >= 0 && diff < 60000) {
                         if (Notification.permission === "granted") {
                             new Notification(`Task Due: ${task.title}`, {
                                 body: `It's time for: ${task.title}`,
-                                icon: "/icon.png" // Optional
+                                icon: "/icon.png"
                             });
                         }
                     }
                 }
             });
-        }, 30000); // Check every 30s
+        }, 30000);
 
         return () => clearInterval(interval);
     }, [tasks]);
@@ -148,7 +148,6 @@ export default function ChatPage() {
     const toggleTask = async (taskId: string) => {
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-            // Optimistic update
             setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: t.status === 'completed' ? 'pending' : 'completed' } : t));
 
             await fetch(`${apiUrl}/api/agent/tool`, {
@@ -162,11 +161,10 @@ export default function ChatPage() {
                     arguments: { task_id: taskId }
                 })
             });
-            // Re-fetch to ensure sync
             fetchTasks();
         } catch (error) {
             console.error("Failed to toggle task", error);
-            fetchTasks(); // Revert on error
+            fetchTasks();
         }
     };
 
@@ -197,7 +195,6 @@ export default function ChatPage() {
                     content: data.message,
                     timestamp: new Date()
                 }]);
-                // Refresh tasks after an action
                 fetchTasks();
             } else {
                 setMessages((prev) => [...prev, {
@@ -222,7 +219,7 @@ export default function ChatPage() {
     };
 
     return (
-        <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+        <div className="flex h-[100dvh] bg-slate-50 overflow-hidden font-sans">
             {/* Mobile Sidebar Overlay */}
             <AnimatePresence>
                 {sidebarOpen && (
