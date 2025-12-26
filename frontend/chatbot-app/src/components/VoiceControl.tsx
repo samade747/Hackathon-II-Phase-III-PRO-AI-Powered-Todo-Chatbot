@@ -5,6 +5,12 @@ import { motion } from "framer-motion";
 import { Mic, MicOff } from "lucide-react";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import "regenerator-runtime/runtime";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
 
 export default function VoiceControl({ onTranscript }: { onTranscript: (t: string) => void }) {
     const {
@@ -73,6 +79,4 @@ export default function VoiceControl({ onTranscript }: { onTranscript: (t: strin
     );
 }
 
-const cn = (...inputs: any[]) => {
-    return inputs.filter(Boolean).join(" ");
-};
+
