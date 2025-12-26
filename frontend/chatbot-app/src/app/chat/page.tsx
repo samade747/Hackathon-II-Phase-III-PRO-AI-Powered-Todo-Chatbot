@@ -7,14 +7,8 @@ import dynamic from "next/dynamic";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-const VoiceControl = dynamic(() => import("@/components/VoiceControl"), {
-    ssr: false,
-    loading: () => (
-        <div className="w-11 h-11 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 shadow-sm">
-            <Mic size={20} />
-        </div>
-    )
-});
+import "regenerator-runtime/runtime";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -39,6 +33,30 @@ export default function ChatPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [tasks, setTasks] = useState<any[]>([]);
+
+    // Speech Recognition Logic
+    const {
+        transcript,
+        listening,
+        resetTranscript,
+        browserSupportsSpeechRecognition
+    } = useSpeechRecognition();
+
+    useEffect(() => {
+        if (!listening && transcript) {
+            sendMessage(transcript);
+            resetTranscript();
+        }
+    }, [listening, transcript]);
+
+    const toggleListening = () => {
+        if (!browserSupportsSpeechRecognition) return;
+        if (listening) {
+            SpeechRecognition.stopListening();
+        } else {
+            SpeechRecognition.startListening({ continuous: false, language: 'en-US' });
+        }
+    };
 
     // Alarm State
     const [activeAlarm, setActiveAlarm] = useState<any>(null);
@@ -477,15 +495,9 @@ export default function ChatPage() {
                                     {chip.label}
                                 </button>
                             ))}
-                            <button
-                                onClick={() => setTaskModalOpen(true)}
-                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 hover:bg-slate-200 transition-all whitespace-nowrap flex items-center gap-1 active:scale-95 shadow-sm"
-                            >
-                                <Calendar size={12} /> Custom
-                            </button>
                         </div>
 
-                        <div className="flex items-center gap-2 lg:gap-4 bg-slate-50 p-2 rounded-[24px] border border-slate-200 shadow-inner focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-200 transition-all relative group">
+                        <div className="flex items-center gap-2 lg:gap-4 bg-slate-50 p-2 rounded-[24px] border border-slate-200 shadow-inner focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-200 transition-all relative">
                             <div className="flex-1 flex items-center px-2 lg:px-4">
                                 <input
                                     type="text"
@@ -493,35 +505,56 @@ export default function ChatPage() {
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyPress={(e) => e.key === "Enter" && sendMessage(input)}
                                     placeholder="Add task or ask a question..."
-                                    className="w-full bg-transparent border-none focus:ring-0 text-slate-700 placeholder-slate-400 py-4 text-[15px] font-medium"
+                                    className="w-full bg-transparent border-none focus:ring-0 text-slate-700 placeholder-slate-400 py-4 text-[15px] font-bold"
                                     disabled={isLoading}
                                 />
                             </div>
 
-                            <div className="flex items-center gap-1.5 lg:gap-2 pr-1.5 lg:pr-2">
+                            <div className="flex items-center gap-2 pr-2">
                                 <button
                                     onClick={() => setTaskModalOpen(true)}
-                                    className="p-3 bg-white text-indigo-600 border border-indigo-100 rounded-2xl transition-all shadow-sm hover:shadow-indigo-100 hover:bg-indigo-50 active:scale-95 group-hover:border-indigo-200"
-                                    title="Open Task Options"
+                                    className="w-12 h-12 bg-white text-indigo-600 border-2 border-indigo-100 rounded-2xl transition-all shadow-sm hover:shadow-indigo-100 hover:bg-indigo-50 active:scale-90 flex items-center justify-center"
+                                    title="Advanced Options"
                                 >
-                                    <Plus size={20} className="stroke-[3px]" />
+                                    <Plus size={24} className="stroke-[3px]" />
                                 </button>
 
-                                <VoiceControl onTranscript={handleTranscript} />
+                                <button
+                                    onClick={toggleListening}
+                                    className={cn(
+                                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md border-2",
+                                        !browserSupportsSpeechRecognition
+                                            ? "bg-slate-100 text-slate-300 border-slate-200"
+                                            : listening
+                                                ? "bg-rose-500 text-white border-rose-600 animate-pulse active:scale-90"
+                                                : "bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700 active:scale-90"
+                                    )}
+                                    title="Voice Command"
+                                >
+                                    {listening ? (
+                                        <div className="flex gap-1 items-center h-4">
+                                            {[1, 2, 3].map(i => (
+                                                <motion.span
+                                                    key={i}
+                                                    animate={{ height: [4, 12, 4] }}
+                                                    transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
+                                                    className="w-1 bg-white rounded-full"
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : <Mic size={22} className="stroke-[2.5px]" />}
+                                </button>
 
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => sendMessage(input)}
                                     disabled={isLoading || !input.trim()}
-                                    className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all shadow-lg shadow-indigo-200 active:scale-90"
+                                    className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all shadow-lg active:scale-90"
                                 >
-                                    <Send size={20} />
+                                    <Send size={22} className="stroke-[2.5px]" />
                                 </motion.button>
                             </div>
-                        </div>
-                        <div className="flex justify-center">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest opacity-60">Press Enter • Built with Agentixz Pro</p>
                         </div>
                     </div>
                 </div>
@@ -573,92 +606,35 @@ export default function ChatPage() {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => setTaskModalOpen(false)}
-                                className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+                                className="absolute inset-0 bg-black/40 backdrop-blur-md"
                             />
                             <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-none"
+                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                className="relative bg-white rounded-[32px] shadow-2xl p-8 w-full max-w-lg overflow-y-auto max-h-[90vh] border border-slate-100 no-scrollbar"
                             >
-                                <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                                    <Plus className="bg-indigo-100 text-indigo-600 p-1 rounded-lg" size={28} />
-                                    New Task
-                                </h2>
-
-                                <div className="space-y-6">
-                                    {/* Title */}
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">What needs to be done?</label>
-                                        <input
-                                            autoFocus
-                                            value={newTaskTitle}
-                                            onChange={(e) => setNewTaskTitle(e.target.value)}
-                                            placeholder="e.g. Call Mom, Buy Milk..."
-                                            className="w-full text-lg font-medium border-b-2 border-slate-100 focus:border-indigo-500 outline-none py-2 transition-colors placeholder:text-slate-300"
-                                        />
-                                    </div>
-
-                                    {/* Priority */}
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1">
-                                            <Flag size={12} /> Priority
-                                        </label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {['low', 'medium', 'high', 'urgent'].map((p) => (
-                                                <button
-                                                    key={p}
-                                                    onClick={() => setNewTaskPriority(p)}
-                                                    className={cn(
-                                                        "px-3 py-1.5 border rounded-lg text-xs font-semibold capitalize transition-all",
-                                                        newTaskPriority === p
-                                                            ? (p === 'urgent' ? "bg-rose-100 text-rose-700 border-rose-200" :
-                                                                p === 'high' ? "bg-orange-100 text-orange-700 border-orange-200" :
-                                                                    p === 'medium' ? "bg-blue-100 text-blue-700 border-blue-200" :
-                                                                        "bg-slate-100 text-slate-700 border-slate-200")
-                                                            : "bg-white text-slate-500 border-slate-100 hover:bg-slate-50"
-                                                    )}
-                                                >
-                                                    {p}
-                                                </button>
-                                            ))}
+                                <div className="flex items-center justify-between mb-8">
+                                    <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg">
+                                            <Plus size={24} className="stroke-[3px]" />
                                         </div>
-                                    </div>
+                                        New Task
+                                    </h2>
+                                    <button onClick={() => setTaskModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+                                        <X size={24} />
+                                    </button>
+                                </div>
 
-                                    {/* Recurrence */}
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1">
-                                            <Repeat size={12} /> Recurrence
+                                <div className="space-y-8">
+                                    {/* Timing - AT THE TOP NOW */}
+                                    <div className="bg-indigo-600 p-6 rounded-3xl text-white shadow-xl shadow-indigo-100">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 block flex items-center gap-2 opacity-80">
+                                            <Clock size={14} className="stroke-[3px]" /> Step 1: Set Time (Optional)
                                         </label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {['none', 'daily', 'weekly', 'monthly'].map((r) => (
-                                                <button
-                                                    key={r}
-                                                    onClick={() => setNewTaskRecurrence(r)}
-                                                    className={cn(
-                                                        "px-3 py-1.5 border rounded-lg text-xs font-semibold capitalize transition-all",
-                                                        newTaskRecurrence === r
-                                                            ? "bg-indigo-100 text-indigo-700 border-indigo-200"
-                                                            : "bg-white text-slate-500 border-slate-100 hover:bg-slate-50"
-                                                    )}
-                                                >
-                                                    {r}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Timer/Date */}
-                                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block flex items-center gap-1">
-                                            <Clock size={12} /> Due Date & Time
-                                        </label>
-
-                                        {/* Chips */}
                                         <div className="flex flex-wrap gap-2 mb-4">
                                             {[
                                                 { label: '+15m', val: 15 },
-                                                { label: '+30m', val: 30 },
                                                 { label: '+1h', val: 60 },
                                                 { label: 'Tmrw', val: 1440 }
                                             ].map((opt) => (
@@ -668,41 +644,76 @@ export default function ChatPage() {
                                                         const d = new Date(new Date().getTime() + opt.val * 60000);
                                                         setNewTaskDate(d.toISOString());
                                                     }}
-                                                    className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200/60 rounded-lg text-xs font-semibold text-slate-600 transition-all active:scale-95 shadow-sm"
+                                                    className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-sm font-black transition-all active:scale-95"
                                                 >
                                                     {opt.label}
                                                 </button>
                                             ))}
                                         </div>
-
-                                        {/* Picker */}
                                         <input
                                             type="datetime-local"
                                             value={newTaskDate ? new Date(newTaskDate).toISOString().slice(0, 16) : ""}
-                                            className="w-full p-2.5 bg-white rounded-xl text-sm font-medium text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100 border border-slate-200/60"
+                                            className="w-full p-4 bg-white/10 border border-white/20 rounded-2xl text-base font-bold text-white placeholder:text-white/40 outline-none focus:bg-white/20 transition-all custom-datetime-input"
                                             onChange={(e) => setNewTaskDate(new Date(e.target.value).toISOString())}
                                         />
                                         {newTaskDate && (
-                                            <div className="mt-2 text-[11px] text-indigo-600 font-medium text-right">
-                                                Selected: {new Date(newTaskDate).toLocaleString()}
+                                            <div className="mt-3 text-xs font-black bg-white text-indigo-600 px-3 py-1.5 rounded-lg w-fit flex items-center gap-2">
+                                                <Bell size={12} className="fill-indigo-600" />
+                                                Set for: {new Date(newTaskDate).toLocaleString()}
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Title */}
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 block">Step 2: Task Name</label>
+                                        <input
+                                            autoFocus
+                                            value={newTaskTitle}
+                                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                                            placeholder="What needs to be done?"
+                                            className="w-full text-2xl font-bold border-b-4 border-slate-100 focus:border-indigo-600 outline-none py-3 transition-colors placeholder:text-slate-200 bg-transparent"
+                                        />
+                                    </div>
+
+                                    {/* Options */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 block">Priority</label>
+                                            <select
+                                                value={newTaskPriority}
+                                                onChange={(e) => setNewTaskPriority(e.target.value)}
+                                                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:border-indigo-600"
+                                            >
+                                                <option value="low">Low Priority</option>
+                                                <option value="medium">Medium Priority</option>
+                                                <option value="high">High Priority</option>
+                                                <option value="urgent">Urgent</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 block">Repeat</label>
+                                            <select
+                                                value={newTaskRecurrence}
+                                                onChange={(e) => setNewTaskRecurrence(e.target.value)}
+                                                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:border-indigo-600"
+                                            >
+                                                <option value="none">No Repeat</option>
+                                                <option value="daily">Daily</option>
+                                                <option value="weekly">Weekly</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="mt-8 flex items-center gap-3">
-                                    <button
-                                        onClick={() => setTaskModalOpen(false)}
-                                        className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
+                                <div className="mt-10 flex gap-4">
+                                    <button onClick={() => setTaskModalOpen(false)} className="flex-1 py-5 text-slate-400 font-bold uppercase text-xs tracking-widest hover:text-slate-600 transition-colors">Cancel</button>
                                     <button
                                         onClick={handleCreateTask}
                                         disabled={!newTaskTitle.trim()}
-                                        className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition-all"
+                                        className="flex-[2] py-5 bg-indigo-600 text-white font-black uppercase text-xs tracking-[0.2em] rounded-2xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:grayscale"
                                     >
-                                        Create Task
+                                        Confirm Task
                                     </button>
                                 </div>
                             </motion.div>
