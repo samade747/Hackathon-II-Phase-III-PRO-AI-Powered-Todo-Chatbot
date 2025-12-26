@@ -40,6 +40,34 @@ export default function ChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [tasks, setTasks] = useState<any[]>([]);
 
+    // Alarm State
+    const [activeAlarm, setActiveAlarm] = useState<any>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Initialize Audio
+    useEffect(() => {
+        audioRef.current = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+        audioRef.current.loop = true;
+    }, []);
+
+    const stopAlarm = () => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
+        setActiveAlarm(null);
+    };
+
+    const snoozeAlarm = async () => {
+        if (!activeAlarm) return;
+        stopAlarm();
+
+        // Optimistic Update: +5 mins
+        // Note: For a real app we'd update backend. Here we simulate.
+        // We will dispatch a command to the agent to handle the math/persistence cleanly.
+        sendMessage(`Remind me to ${activeAlarm.title} in 5 minutes`);
+    };
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -130,19 +158,16 @@ export default function ChatPage() {
                 if (task.due_date && task.status === 'pending') {
                     const due = new Date(task.due_date);
                     const diff = now.getTime() - due.getTime();
-                    // Alert if due within last 60s
-                    if (diff >= 0 && diff < 60000) {
-                        // Play Beep
-                        try {
-                            const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-                            audio.play().catch(e => console.error("Audio play failed", e));
-                        } catch (e) { }
-
+                    // Trigger if due 
+                    // AND not already alerting for this specific instance
+                    // (Simple check: due in last 60s and we aren't already blocked on it)
+                    if (diff >= 0 && diff < 60000 && (!activeAlarm || activeAlarm.id !== task.id)) {
+                        setActiveAlarm(task);
+                        if (audioRef.current) {
+                            audioRef.current.play().catch(e => console.log("Audio needed interaction"));
+                        }
                         if (Notification.permission === "granted") {
-                            new Notification(`Alarm: ${task.title}`, {
-                                body: `It's time for: ${task.title}`,
-                                icon: "/icon.png"
-                            });
+                            new Notification(`⏰ Alarm: ${task.title}`);
                         }
                     }
                 }
@@ -150,7 +175,7 @@ export default function ChatPage() {
         }, 30000);
 
         return () => clearInterval(interval);
-    }, [tasks]);
+    }, [tasks, activeAlarm]);
 
     const toggleTask = async (taskId: string) => {
         try {
@@ -341,6 +366,16 @@ export default function ChatPage() {
                             </div>
                         </div>
                     </div>
+
+                    {/* Navbar Alarm Icon */}
+                    <div className="relative p-2 hover:bg-slate-100 rounded-full transition-colors cursor-pointer">
+                        <Bell className={cn("text-slate-400 transition-all", activeAlarm && "text-rose-500 animate-[bounce_1s_infinite]")} size={24} />
+                        {tasks.filter(t => t.due_date && t.status === 'pending').length > 0 && (
+                            <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] flex items-center justify-center rounded-full font-bold shadow-sm ring-2 ring-white">
+                                {tasks.filter(t => t.due_date && t.status === 'pending').length}
+                            </span>
+                        )}
+                    </div>
                 </header>
 
                 {/* Message Area */}
@@ -428,6 +463,44 @@ export default function ChatPage() {
                         <p className="text-[11px] text-slate-400 font-medium">Press Enter to send • Built with Agentixz Intelligence</p>
                     </div>
                 </div>
+
+                {/* Alarm Overlay */}
+                <AnimatePresence>
+                    {activeAlarm && (
+                        <motion.div
+                            initial={{ y: 100, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 100, opacity: 0 }}
+                            className="fixed bottom-0 inset-x-0 z-[60] bg-white border-t border-rose-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] p-6 pb-safe"
+                        >
+                            <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 animate-pulse">
+                                        <Bell size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-900 text-lg">Alarm Ringing!</h3>
+                                        <p className="text-slate-500 text-sm">Task: {activeAlarm.title}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={snoozeAlarm}
+                                        className="px-6 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                                    >
+                                        Snooze 5m
+                                    </button>
+                                    <button
+                                        onClick={stopAlarm}
+                                        className="px-6 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-200 transition-colors"
+                                    >
+                                        Dismiss
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </main>
         </div>
     );
