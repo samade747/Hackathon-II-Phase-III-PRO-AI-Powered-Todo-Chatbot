@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, CheckCircle2, Menu, X, LogOut, Search, Repeat, Bot, Settings, Bell } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, Menu, X, LogOut, Search, Repeat, Bot, Settings, Bell, Calendar, Clock } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -110,6 +110,7 @@ interface Task {
     title: string;
     description?: string;
     due_date?: string;
+    reminder_time?: string;
     status: "pending" | "completed";
     priority?: "low" | "medium" | "high" | "urgent";
     recurrence?: "none" | "daily" | "weekly" | "monthly";
@@ -205,6 +206,9 @@ export default function ChatPage() {
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const [newTaskPriority, setNewTaskPriority] = useState<Task['priority']>("medium");
     const [newTaskRecurrence, setNewTaskRecurrence] = useState<Task['recurrence']>("none");
+    const [newTaskDueDate, setNewTaskDueDate] = useState("");
+    const [newTaskDueTime, setNewTaskDueTime] = useState("");
+    const [newTaskReminderTime, setNewTaskReminderTime] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [toasts, setToasts] = useState<{ id: string; message: string; type: 'success' | 'error' | 'info' }[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -260,11 +264,26 @@ export default function ChatPage() {
         if (titles.length === 0) return;
 
         if (titles.length === 1) {
-            const res = await callMcpTool("add_todo", {
+            // Combine date and time into ISO string
+            let dueDate = null;
+            if (newTaskDueDate) {
+                const dateTime = newTaskDueTime
+                    ? `${newTaskDueDate}T${newTaskDueTime}:00`
+                    : `${newTaskDueDate}T00:00:00`;
+                dueDate = new Date(dateTime).toISOString();
+            }
+
+            const args: any = {
                 title: titles[0].trim(),
                 priority,
                 recurrence
-            });
+            };
+
+            if (dueDate) {
+                args.due_date = dueDate;
+            }
+
+            const res = await callMcpTool("add_todo", args);
             if (res) {
                 addToast("Objective synchronized successfully. 🚀");
             }
@@ -280,6 +299,9 @@ export default function ChatPage() {
         }
 
         setNewTaskTitle("");
+        setNewTaskDueDate("");
+        setNewTaskDueTime("");
+        setNewTaskReminderTime("");
         setIsAddingTask(false);
     };
 
@@ -827,6 +849,36 @@ export default function ChatPage() {
                                             </select>
                                         </div>
                                     </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Due Date</label>
+                                            <input
+                                                type="date"
+                                                value={newTaskDueDate}
+                                                onChange={(e) => setNewTaskDueDate(e.target.value)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Due Time</label>
+                                            <input
+                                                type="time"
+                                                value={newTaskDueTime}
+                                                onChange={(e) => setNewTaskDueTime(e.target.value)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Reminder/Alarm Time</label>
+                                        <input
+                                            type="datetime-local"
+                                            value={newTaskReminderTime}
+                                            onChange={(e) => setNewTaskReminderTime(e.target.value)}
+                                            placeholder="Set reminder notification time"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white placeholder:text-slate-500"
+                                        />
+                                    </div>
                                     <div className="flex gap-3 pt-2">
                                         <button
                                             onClick={() => handleAddTask(newTaskTitle, newTaskPriority, newTaskRecurrence)}
@@ -835,7 +887,7 @@ export default function ChatPage() {
                                             Add Task
                                         </button>
                                         <button
-                                            onClick={() => { setIsAddingTask(false); setNewTaskTitle(""); setNewTaskPriority("medium"); setNewTaskRecurrence("none"); }}
+                                            onClick={() => { setIsAddingTask(false); setNewTaskTitle(""); setNewTaskPriority("medium"); setNewTaskRecurrence("none"); setNewTaskDueDate(""); setNewTaskDueTime(""); setNewTaskReminderTime(""); }}
                                             className="px-6 py-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all"
                                         >
                                             Cancel
@@ -868,9 +920,19 @@ export default function ChatPage() {
                                                     <span className={cn("text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest", task.priority === 'urgent' ? "bg-red-500/20 text-red-400" : task.priority === 'high' ? "bg-amber-500/20 text-amber-400" : "bg-slate-500/20 text-slate-400")}>{task.priority}</span>
                                                 )}
                                             </div>
-                                            {task.recurrence && task.recurrence !== 'none' && (
-                                                <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest"><Repeat size={10} /> {task.recurrence}</div>
-                                            )}
+                                            <div className="flex items-center gap-3 flex-wrap">
+                                                {task.recurrence && task.recurrence !== 'none' && (
+                                                    <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest"><Repeat size={10} /> {task.recurrence}</div>
+                                                )}
+                                                {task.due_date && (
+                                                    <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-400/60 uppercase tracking-widest">
+                                                        <Calendar size={10} />
+                                                        {new Date(task.due_date).toLocaleDateString()}
+                                                        <Clock size={10} className="ml-1" />
+                                                        {new Date(task.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <button onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-all"><Trash2 size={16} /></button>
                                     </motion.div>
@@ -902,6 +964,15 @@ export default function ChatPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Priority</div><select value={selectedTask.priority || 'medium'} onChange={(e) => updateTaskDetails(selectedTask.id, { priority: e.target.value as any })} className="bg-transparent border-none focus:ring-0 text-xs font-bold p-0 uppercase block w-full"><option className="bg-[#1E293B]" value="low">LOW</option><option className="bg-[#1E293B]" value="medium">MEDIUM</option><option className="bg-[#1E293B]" value="high">HIGH</option><option className="bg-[#1E293B]" value="urgent">URGENT</option></select></div>
                                         <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Repeat</div><select value={selectedTask.recurrence || 'none'} onChange={(e) => updateTaskDetails(selectedTask.id, { recurrence: e.target.value as any })} className="bg-transparent border-none focus:ring-0 text-xs font-bold p-0 uppercase block w-full"><option className="bg-[#1E293B]" value="none">NONE</option><option className="bg-[#1E293B]" value="daily">DAILY</option><option className="bg-[#1E293B]" value="weekly">WEEKLY</option><option className="bg-[#1E293B]" value="monthly">MONTHLY</option></select></div>
+                                    </div>
+                                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Due Date & Time</div>
+                                        <input
+                                            type="datetime-local"
+                                            value={selectedTask.due_date ? new Date(selectedTask.due_date).toISOString().slice(0, 16) : ''}
+                                            onChange={(e) => updateTaskDetails(selectedTask.id, { due_date: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                                            className="bg-transparent border border-white/10 focus:ring-2 focus:ring-indigo-500 text-xs font-bold p-2 rounded-lg block w-full"
+                                        />
                                     </div>
                                     <div className="space-y-2"><div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Description</div><textarea value={selectedTask.description || ''} onChange={(e) => updateTaskDetails(selectedTask.id, { description: e.target.value })} placeholder="Tactical context..." className="w-full bg-transparent border-none focus:ring-0 p-0 text-sm italic resize-none h-40" /></div>
                                 </div>
