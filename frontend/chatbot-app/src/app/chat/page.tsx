@@ -333,7 +333,7 @@ export default function ChatPage() {
                     </div>
                 </div>
 
-                <div className="p-4 flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                <div className="p-4 flex-1 overflow-y-auto space-y-2 custom-scrollbar">
                     {/* New Chat Button */}
                     <button
                         onClick={() => setMessages([])}
@@ -429,7 +429,7 @@ export default function ChatPage() {
                 </header>
 
                 {/* Message Area */}
-                <div className="flex-1 overflow-y-auto px-6 lg:px-10 py-8 space-y-8 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                <div className="flex-1 overflow-y-auto px-6 lg:px-10 py-8 space-y-8 custom-scrollbar">
                     <AnimatePresence mode="popLayout">
                         {messages.map((m, i) => (
                             <motion.div
