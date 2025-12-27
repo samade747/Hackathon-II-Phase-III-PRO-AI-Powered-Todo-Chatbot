@@ -72,7 +72,7 @@ async def dispatch_agent(
             action = "clarify_add_task"
             result = {"missing": "task_details", "priority": priority, "recurrence": recurrence}
         else:
-            due_date = slots.get("due_date", None)
+            due_date = slots.get("due_date") # Can be None, mcp_server now handles str | None
             tool_res = await mcp.call_tool("add_todo", {
                 "title": item, 
                 "user_id": user_id,

@@ -12,8 +12,8 @@ async def add_todo(
     user_id: str, 
     priority: str = "medium", 
     recurrence: str = "none", 
-    due_date: str = None,
-    tags: list = None
+    due_date: str | None = None,
+    tags: list | None = None
 ) -> str:
     """
     Add a new todo task.
