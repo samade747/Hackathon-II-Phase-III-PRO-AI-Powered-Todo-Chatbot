@@ -1,85 +1,113 @@
-# 🤖 AI Agentixz USA — World-Class Todo Chatbot
+# 🤖 AI Agentixz USA — Elite AI-Powered Todo Operative
 
-AI Agentixz USA is a high-fidelity, intelligent task management ecosystem built to the "PRO" specifications of the Hackathon II Phase III. It combines cinematic UI/UX design with advanced AI orchestration via the Model Context Protocol (MCP) and LLM-powered semantic understanding.
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-builders?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database-green?logo=supabase)](https://supabase.com/)
+[![MCP](https://img.shields.io/badge/MCP-Protocol-blue)](https://modelcontextprotocol.io/)
+[![License](https://img.shields.io/badge/License-Elite-gold)](https://github.com/)
+
+**AI Agentixz USA** is a world-class, high-fidelity task management ecosystem designed for elite productivity. It transforms simple todo lists into a cinematic orchestration platform, leveraging the **Model Context Protocol (MCP)** and advanced LLM understanding to manage your objectives via natural language and voice.
 
 ---
 
-## 🌟 World-Class Features
+## 🌟 Elite Feature Suite
 
-### 🧠 Intelligence Layer
-- **LLM-Powered Intent Extraction**: Uses GPT-4o-mini to semantically parse user requests, identifying intents (add, list, complete, delete) and extracting slots (priority, recurrence).
-- **Natural Urdu Support**: Full bilingual support with real-time, context-aware translation from Urdu to English for task processing.
-- **MCP Orchestration**: Standardized Model Context Protocol (MCP) server for robust and modular tool execution.
+### 🧠 Intelligence Layer (Neural Engine v3.8)
+- **Semantic Intent Extraction**: Powered by OpenAI, the system dynamically parses unstructured text into structured "Mission Objectives."
+- **Bilingual Protocol**: Native support for **English** and **Urdu**, with real-time translation and cultural context preserved during task synchronization.
+- **Voice-to-Mission Conversion**: Direct deployment of tasks via vocal directives.
 
-### ⚡ Tactical Task Management
-- **Mission Respawn (Recurrence)**: Automated logic that creates the next instance of recurring tasks (Daily, Weekly, Monthly) upon completion.
-- **Priority Protocol**: Color-coded tactical priorities (Urgent, High, Medium, Low) for elite objective tracking.
-- **Mission Duration (Timer)**: Real-time task timers synchronized across the database to track productivity.
-- **Bulk Add Mode**: Intelligent multi-line processing for adding multiple objectives simultaneously.
+### ⚡ Tactical Mission Control
+- **Mission Respawn (Recurrence)**: Automated cycle management for Daily, Weekly, and Monthly recurring objectives.
+- **Priority Protocol**: Urgent, High, Medium, and Low priorities with specialized color-coding and filtering.
+- **Mission Duration (Timer)**: Real-time mission clocks synchronized across the cloud to track tactical efficiency.
+- **Bulk Deployment**: Batch-process multiple objectives in a single transmission.
 
 ### 🎨 Cinematic Interface
-- **Premium Visualization**: Real-time "Mission Progress" charts and "Tactical Priority" distribution graphs.
-- **Interactive Toasts**: High-end notification system with an integrated "Undo" mechanism for task deletions.
-- **Cinematic Transitions**: Powered by Framer Motion for a fluid, premium, and interactive user experience.
+- **Premium Visualization**: High-fidelity "Mission Progress" circular gauges and "Tactical Distribution" bar charts.
+- **Ultra-Responsive Layout**: Professional-grade responsiveness across mobile, tablet, and desktop displays.
+- **Micro-Animations**: Fluid transitions and interactive feedback powered by **Framer Motion**.
+- **Indigo Theme**: A curated, premium dark-mode aesthetic for reduced ocular strain during long-haul productivity.
 
 ---
 
-## 🛠 Technology Stack
+## 🏗 System Architecture
 
-- **Frontend**: Next.js (Tailwind CSS, Framer Motion, Lucide React, Better Auth)
-- **Backend**: FastAPI (Python), Uvicorn, Python-dotenv
-- **Database**: Supabase (PostgreSQL, Auth, RLS)
-- **AI**: OpenAI (via Python SDK), FastMCP (Model Context Protocol)
-
----
-
-## 🚀 Installation & Setup
-
-### 1. Database Configuration (Supabase)
-Run the following scripts in your Supabase SQL Editor:
-1.  [`database_init.sql`](file:///d:/github/Hackathon-II-Phase-III-PRO-AI-Powered-Todo-Chatbot/database_init.sql): Sets up the `tasks` table and Row Level Security (RLS).
-2.  [`database_upgrade.sql`](file:///d:/github/Hackathon-II-Phase-III-PRO-AI-Powered-Todo-Chatbot/database_upgrade.sql): Adds advanced world-class features (priority, recurrence, timers).
-
-### 2. Backend Setup
-1.  **Dependencies**: `cd backend && pip install -r requirements.txt`
-2.  **Environment Variables**: Create `backend/.env` with:
-    ```env
-    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-    OPENAI_API_KEY=your_openai_api_key
-    ```
-3.  **Run**: `python -m uvicorn app.main:app --reload --port 8000`
-
-### 3. Frontend Setup
-1.  **Dependencies**: `cd frontend && npm install`
-2.  **Environment Variables**: Create `frontend/.env.local` with:
-    ```env
-    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-    NEXT_PUBLIC_API_URL=http://localhost:8000
-    ```
-3.  **Run**: `npm run dev`
+```mermaid
+graph TD
+    A[User Interface - Next.js] <--> B[API Dispatcher - FastAPI]
+    B <--> C[Neural Engine - LLM/GPT]
+    B <--> D[MCP Server - TodoAgent]
+    D <--> E[(Supabase Cloud Architecture)]
+    A <--> E
+    
+    subgraph "Intelligence Core"
+    C
+    D
+    end
+    
+    subgraph "Storage & Security"
+    E
+    end
+```
 
 ---
 
-## 📡 Production Deployment
+## 📡 MCP Tool Library (TodoAgent)
 
-### Vercel (Frontend)
-Ensure you set the following **Environment Variables** in the Vercel Dashboard:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_API_URL` (Points to your deployed backend)
+The system utilizes the **Model Context Protocol** to standardize interactions with the objective database:
 
-### Backend Deployment
-The backend is designed for subfolder projects (e.g., Railway). Ensure `load_dotenv()` is correctly pointed and all Supabase keys are provided in the production environment.
-
----
-
-## 🛡 Security (RLS)
-The application uses **Row Level Security** in Supabase, ensuring that users can only view and manage tasks associated with their own `user_id`.
+| Tool | Capability |
+| :--- | :--- |
+| `add_todo` | Deploys a new objective with title, priority, and recurrence. |
+| `add_todos_bulk` | Orchestrates a batch deployment of multiple objectives. |
+| `list_todos` | Retrieves all active missions from the tactical archives. |
+| `toggle_todo` | Switches mission status and triggers "Mission Respawn." |
+| `manage_timer` | Controls the "Mission Clock" (Start/Stop) for time tracking. |
+| `delete_todo` | Erases an objective from the neural net. |
 
 ---
 
-## ✍️ Authors & License
-Created for Hackathon II — Phase III PRO.
-**Status**: Ready for Deployment 🚀🇺🇸
+## 🛠 Technical Stack
+
+- **Frontend**: `Next.js 15`, `Tailwind CSS 4`, `Framer Motion`, `Lucide React`, `Better Auth`.
+- **Backend**: `FastAPI`, `Uvicorn`, `Python-dotenv`.
+- **Cloud/Data**: `Supabase` (PostgreSQL, Auth, RLS).
+- **Communication**: `Model Context Protocol (MCP)`, `FastMCP`.
+- **Logic**: `Python 3.10+`, `TypeScript`.
+
+---
+
+## 🚀 Deployment & Installation
+
+### 1. Database Initialization
+Execute the SQL protocols in your Supabase Editor:
+1. [`database_init.sql`](file:///d:/github/Hackathon-II-Phase-III-PRO-AI-Powered-Todo-Chatbot/database_init.sql) — Basic Table & RLS.
+2. [`database_upgrade.sql`](file:///d:/github/Hackathon-II-Phase-III-PRO-AI-Powered-Todo-Chatbot/database_upgrade.sql) — Advanced Analytics & Timing.
+
+### 2. Neural Backend Setup
+```bash
+cd backend
+pip install -r requirements.txt
+# Configure .env with SUPABASE_URL, ANON_KEY, and OPENAI_API_KEY
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+### 3. Frontend Deployment
+```bash
+cd frontend
+npm install
+# Configure .env.local with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_API_URL
+npm run dev
+```
+
+---
+
+## 🛡 Security Protocol
+Architected with **Row Level Security (RLS)**, ensuring objective isolation. No data leakage occurs between operatives; your tactical plans remain your own.
+
+---
+
+## ✍️ Credits & Hackathon Status
+Developed for **Hackathon II — Phase III PRO**. 
+**Status**: Combat Ready. 🚀🇺🇸
