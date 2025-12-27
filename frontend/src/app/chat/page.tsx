@@ -674,8 +674,11 @@ export default function ChatPage() {
                 </AnimatePresence>
             </div>
 
-            {/* Main Container - 2 Column Grid: Chat + Todo */}
-            <div className={cn("flex-1 grid grid-cols-[1fr_500px] overflow-hidden relative z-10 transition-all duration-500", sidebarOpen && "ml-80")}>
+            {/* Main Container - Responsive Grid: Chat + Todo */}
+            <div className={cn(
+                "flex-1 grid grid-cols-1 lg:grid-cols-[1fr_450px] overflow-hidden relative z-10 transition-all duration-500",
+                sidebarOpen && "lg:ml-80"
+            )}>
 
 
                 {/* Chat Interface - Center Column */}
@@ -697,7 +700,7 @@ export default function ChatPage() {
                                 </div>
                             </div>
                         )}
-                        
+
                         <AnimatePresence mode="popLayout">
                             {messages.map((msg) => (
                                 <motion.div
@@ -707,8 +710,8 @@ export default function ChatPage() {
                                     exit={{ opacity: 0 }}
                                     className={cn(
                                         "flex gap-4 p-4 rounded-2xl",
-                                        msg.role === "user" 
-                                            ? "bg-indigo-500/10 border border-indigo-500/20 ml-12" 
+                                        msg.role === "user"
+                                            ? "bg-indigo-500/10 border border-indigo-500/20 ml-12"
                                             : "bg-white/5 border border-white/5 mr-12"
                                     )}
                                 >
@@ -748,7 +751,7 @@ export default function ChatPage() {
                                 </div>
                             </motion.div>
                         )}
-                        
+
                         <div ref={messagesEndRef} />
                     </div>
 
@@ -777,8 +780,8 @@ export default function ChatPage() {
                 </section>
 
                 {/* Task Board - Right Column */}
-                <section className="flex-1 flex flex-col bg-[#1E293B]/40 backdrop-blur-3xl">
-                    <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02]">
+                <section className="flex flex-col bg-[#1E293B]/60 lg:bg-[#1E293B]/40 backdrop-blur-3xl min-h-[50vh] lg:min-h-0 border-t lg:border-t-0 lg:border-l border-white/5">
+                    <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-white/[0.02] flex-shrink-0">
                         <div className="flex items-center gap-6">
                             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80">
                                 <Menu size={24} />
@@ -810,7 +813,7 @@ export default function ChatPage() {
                         </div>
                     </header>
 
-                    <div className="flex-1 overflow-y-auto p-8 space-y-4">
+                    <div className="flex-1 overflow-y-scroll p-4 sm:p-8 space-y-4">
                         <AnimatePresence>
                             {isAddingTask && (
                                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-6 p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl space-y-4">
